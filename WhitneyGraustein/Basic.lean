@@ -9,6 +9,15 @@ open scoped Manifold Topology
 
 #check immersionRel_satisfiesHPrincipleWith
 
+lemma fin_rank_c : finrank ℝ ℂ = 2 := by exact finrank_real_complex
+lemma fin_rank_r : finrank ℝ (EuclideanSpace ℝ (Fin 1)) = 1 := by simp
+lemma rank_r_le_rank_c : finrank ℝ (EuclideanSpace ℝ (Fin 1)) < finrank ℝ ℂ := by simp
+def ε : (ℝ^1) → ℝ := fun _ ↦ 1
+
+#check (immersionRel_satisfiesHPrincipleWith (𝓡 1) (ℝ^1) 𝓘(ℝ, ℂ) ℂ 𝓘(ℝ, ℝ) ℝ rank_r_le_rank_c
+  ((Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ)
+   (fun _ ↦ zero_lt_one) (continuous_const)).bs
+
 /-
   First; we need to define the statement of the Whitney Graustein theorem
 
@@ -43,6 +52,7 @@ local notation "𝕊¹" => sphere (0 : E) 1
 -- its slash M C I for 𝓘
 #check 𝓘(ℝ, E)
 #check Immersion (𝓡 1) 𝓘(ℝ, E) (fun x : 𝕊¹ ↦ (x : E)) ⊤
+#check immersionRel (𝓡 1) (ℝ^1) 𝓘(ℝ, E) E
 
 /-
 
@@ -131,6 +141,7 @@ end turning
 
 
 section whitneygraustein
+
 
 -- first implication whitney graustein
 -- Assuming turning number is equal => ∃ homotopy
