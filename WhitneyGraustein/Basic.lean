@@ -3,6 +3,8 @@ import SphereEversion.Global.Immersion
 open Metric FiniteDimensional Set Function LinearMap Filter ContinuousLinearMap Complex NormedSpace
 open scoped Manifold Topology
 
+-- set_option diagnostics true
+
 /-
   The goal is to prove the Whitney Graustein theorem.
 -/
@@ -40,10 +42,13 @@ def ε : (ℝ^1) → ℝ := fun _ ↦ 1
 
 -- Euclidean space
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2)]
+variable (E' : Type*) [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = 3)]
 
 #check sphere (0 : E) 1
 
 local notation "𝕊¹" => sphere (0 : E) 1
+local notation "𝕊²" => sphere (0 : E') 1
+local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℂ) ℂ
 
 #check 𝕊¹
 
@@ -51,8 +56,10 @@ local notation "𝕊¹" => sphere (0 : E) 1
 #check 𝓡 2
 -- its slash M C I for 𝓘
 #check 𝓘(ℝ, E)
-#check Immersion (𝓡 1) 𝓘(ℝ, E) (fun x : 𝕊¹ ↦ (x : E)) ⊤
-#check immersionRel (𝓡 1) (ℝ^1) 𝓘(ℝ, E) E
+--#check Immersion (𝓡 1) 𝓘(ℝ, E) (fun x : 𝕊¹ ↦ (x : E)) ⊤
+--#check immersionRel (𝓡 1) (𝕊¹) 𝓘(ℝ, E) E
+
+#check SigmaCompactSpace 𝕊¹
 
 /-
 
@@ -73,16 +80,32 @@ theorem whitney_graustein {f₀ f₁ : 𝕊¹ → E} (h₀ : Immersion (𝓡 1) 
 
 section loops
 
+/- OLD
 -- Structure for a loop in ℂ that is also an immersion.
-structure LoopImmersion (γ : ℝ → ℂ) : Prop where
-  cdiff : ContDiff ℝ ⊤ γ        -- Smooth function
-  per : Periodic γ 1            -- Period of 1
-  imm : ∀ t : ℝ, deriv γ t ≠ 0  -- Immersion condition (≠ 0, since Dim(𝕊¹) = 1)
+structure LoopImmersion (γ : 𝕊¹ → ℂ) : Prop where
+  cdiff : ContDiff ℝ ⊤ γ    -- Smooth function
+  per : Periodic γ 1         -- Period of 1
+  imm : ∀ t : ℝ , deriv γ t ≠ 0   -- Immersion condition (≠ 0, since Dim(𝕊¹) = 1)
+-/
 
+-- Structure for a loop in ℂ that is also an immersion.
+structure LoopImmersion (γ : 𝕊¹ → ℂ) : Prop where
+  cdiff : Smooth (𝓡 1) 𝓘(ℝ, ℂ) γ                -- Smooth function
+  imm : ∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℂ) γ t ≠ 0 -- Immersion condition (≠ 0, since Dim(𝕊¹) = 1)
+
+
+/- OLD
 -- Structure for homotopy between loops
 structure LoopHomotopy (Γ : ℝ → ℝ → ℂ) : Prop where
   cdiff : ContDiff ℝ ⊤ (uncurry Γ)
   imm : ∀ t : ℝ, LoopImmersion (Γ t)
+-/
+
+-- Structure for homotopy between loops
+structure LoopHomotopy (Γ : ℝ → 𝕊¹ → ℂ) : Prop where
+  cdiff : Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℂ) ↿Γ
+  imm : ∀ t : ℝ, LoopImmersion E (Γ t)
+
 
 end loops
 
@@ -113,26 +136,25 @@ END
 
 -/
 
-variable {γ : ℝ → ℂ} (γ_imm : LoopImmersion γ)
 
-axiom LoopImmersion.lift {γ : ℝ → ℂ} (γ_imm : LoopImmersion γ) : ℝ → ℝ
-axiom LoopImmersion.cdiff_lift : ContDiff ℝ ⊤ γ_imm.lift
-axiom LoopImmersion.turningNumber {γ : ℝ → ℂ} (γ_imm : LoopImmersion γ) : ℤ
-axiom LoopImmersion.deriv_in_complex (t : ℝ) : deriv γ t = ‖deriv γ t‖ * exp (2 * Real.pi * I * γ_imm.lift t)
-axiom LoopImmersion.lift_add (t : ℝ) (k : ℤ) : γ_imm.lift (t + k) = γ_imm.lift t + k * γ_imm.turningNumber
+axiom LoopImmersion.lift {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) : ℝ → ℝ
+axiom LoopImmersion.cdiff_lift {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) : Smooth 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) γ_imm.lift --ContDiff ℝ ⊤ γ_imm.lift
+axiom LoopImmersion.turningNumber {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) : ℤ
+--axiom LoopImmersion.deriv_in_complex {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) (t : 𝕊¹) (t' : ℝ) :
+--  mfderiv (𝓡 1) 𝓘(ℝ, ℂ) γ t = ‖mfderiv (𝓡 1) 𝓘(ℝ, ℂ) γ t‖ * exp (2 * Real.pi * I * γ_imm.lift E t')
+axiom LoopImmersion.lift_add {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) (t : ℝ) (k : ℤ) : γ_imm.lift E (t + k) = γ_imm.lift E t + k * γ_imm.turningNumber
 
 -- Axiom that tells us that taking the turning number as a function from a homotopy is continuous
 -- To be proven once turning number is fully defined
-axiom LoopHomotopy.cont_turningNumber {Γ : ℝ → ℝ → ℂ} (Γ_hom : LoopHomotopy Γ) : Continuous (fun t ↦ (Γ_hom.imm t).turningNumber)
+axiom LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℂ} (Γ_hom : LoopHomotopy E Γ) : Continuous (fun t ↦ (Γ_hom.imm t).turningNumber)
 
 -- Unused for now
 -- Lemma to show that one can get turning number from lift
-lemma turning_from_lift {γ : ℝ → ℂ} (γ_imm : LoopImmersion γ) :
-  γ_imm.turningNumber =  γ_imm.lift 1 - γ_imm.lift 0 := by
+lemma turning_from_lift {γ : 𝕊¹ → ℂ} (γ_imm : LoopImmersion E γ) :
+  γ_imm.turningNumber =  γ_imm.lift E 1 - γ_imm.lift E 0 := by
     rw[← zero_add 1, eq_sub_iff_add_eq, add_comm]
     apply symm
-    simpa using γ_imm.lift_add 0 1
-
+    simpa using γ_imm.lift_add E 0 1
 
 end turning
 
@@ -140,25 +162,52 @@ end turning
 
 
 
+
 section whitneygraustein
 
+-- Give a family of formal solutions
+def family_of_formal_sol : HtpyFormalSol 𝓡_imm := sorry
+
+-- Prove that the family of formal solutions is holonomic near C := {0,1} x 𝕊¹
+theorem family_of_formal_sol_hol_near_zero_one :
+    ∀ᶠ s : ℝ × 𝕊¹ near {0, 1} ×ˢ univ, (family_of_formal_sol E s.1).toOneJetSec.IsHolonomicAt s.2 := by
+      sorry
 
 -- first implication whitney graustein
 -- Assuming turning number is equal => ∃ homotopy
-theorem whitney_graustein_left {f₀ f₁ : ℝ → ℂ} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
+theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℂ} (f₀_imm : LoopImmersion E f₀) (f₁_imm : LoopImmersion E f₁)
   (eq_turn : f₀_imm.turningNumber = f₁_imm.turningNumber) :
-    ∃F : ℝ → ℝ → ℂ, LoopHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁) := by
+    ∃F : ℝ → 𝕊¹ → ℂ, LoopHomotopy E F ∧ (F 0 = f₀) ∧ (F 1 = f₁) := by
+      -- First step is to get H-principle result
+      have ineq_rank : finrank ℝ (ℝ^1) < finrank ℝ ℂ := by simp
+      let ε : 𝕊¹ → ℝ := fun _ ↦ 1
+      have hε_pos : ∀ x, 0 < ε x := fun _ ↦ zero_lt_one
+      have hε_cont : Continuous ε := continuous_const
+      let C := ({0, 1} : Set ℝ).prod (univ : Set 𝕊¹)
+      have C_closed : IsClosed C :=
+        (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
+      haveI : Nontrivial E := nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = 2)
+      haveI : Nonempty 𝕊¹ :=
+        (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
+      haveI : SigmaCompactSpace 𝕊¹ := by sorry -- To prove that 𝕊¹ is SigmaCompact
+      rcases (immersionRel_satisfiesHPrincipleWith (𝓡 1) 𝕊¹ 𝓘(ℝ, ℂ) ℂ 𝓘(ℝ, ℝ) ℝ
+        ineq_rank C_closed hε_pos hε_cont).bs (family_of_formal_sol E) (family_of_formal_sol_hol_near_zero_one E)
+         with ⟨F, h₁, h₂, h₃, h₄⟩
+
+      -- Remains to show that F is a Loophomotopy f₀ ~ f₁
       sorry
+
+
 
 -- second implication whitney graustein
 -- Assuming ∃ homotopy => turning number eq
-theorem whitney_graustein_right {f₀ f₁ : ℝ → ℂ} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
-  (hom : ∃ F : ℝ → ℝ → ℂ, LoopHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) :
+theorem whitney_graustein_right {f₀ f₁ : 𝕊¹ → ℂ} (f₀_imm : LoopImmersion E f₀) (f₁_imm : LoopImmersion E f₁)
+  (hom : ∃ F : ℝ → 𝕊¹ → ℂ, LoopHomotopy E F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) :
     f₀_imm.turningNumber = f₁_imm.turningNumber := by
 
       -- choose a working F and extract its properties
       let F := Classical.choose hom
-      have loop_hom : LoopHomotopy F := by
+      have loop_hom : LoopHomotopy E F := by
         exact (Classical.choose_spec hom).left
       have F₀ : F 0 = f₀ := by
         exact (Classical.choose_spec hom).right.left
@@ -175,7 +224,7 @@ theorem whitney_graustein_right {f₀ f₁ : ℝ → ℂ} (f₀_imm : LoopImmers
       -- Prove continuity of G (taking turning number)
       -- Uses axiom cont_turningNumber!!
       have G_cont : Continuous G := by
-        exact LoopHomotopy.cont_turningNumber loop_hom
+        exact LoopHomotopy.cont_turningNumber E loop_hom
 
       -- Prove continuous G => G constant
       have G_const : ∀ t s, G t = G s := by
@@ -189,8 +238,8 @@ theorem whitney_graustein_right {f₀ f₁ : ℝ → ℂ} (f₀_imm : LoopImmers
 
 
 -- for completeness the theorem in its entirety
-theorem whitney_graustein {f₀ f₁ : ℝ → ℂ} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁) :
-  (∃F : ℝ → ℝ → ℂ, LoopHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) ↔ (f₀_imm.turningNumber = f₁_imm.turningNumber) :=
-    Iff.intro (whitney_graustein_right f₀_imm f₁_imm) (whitney_graustein_left f₀_imm f₁_imm)
+theorem whitney_graustein {f₀ f₁ : 𝕊¹ → ℂ} (f₀_imm : LoopImmersion E f₀) (f₁_imm : LoopImmersion E f₁) :
+  (∃F : ℝ → 𝕊¹ → ℂ, LoopHomotopy E F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) ↔ (f₀_imm.turningNumber = f₁_imm.turningNumber) :=
+    Iff.intro (whitney_graustein_right E f₀_imm f₁_imm) (whitney_graustein_left E f₀_imm f₁_imm)
 
 end whitneygraustein

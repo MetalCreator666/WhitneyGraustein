@@ -9,6 +9,7 @@ package "WhitneyGraustein" where
     ⟨`relaxedAutoImplicit, false⟩
   ]
 
+
 require SphereEversion from git "https://github.com/leanprover-community/sphere-eversion"@"master"
 
 lean_lib «WhitneyGraustein» where
