@@ -9,17 +9,6 @@ open scoped Manifold Topology
   The goal is to prove the Whitney Graustein theorem.
 -/
 
-#check immersionRel_satisfiesHPrincipleWith
-
-lemma fin_rank_c : finrank ℝ ℂ = 2 := by exact finrank_real_complex
-lemma fin_rank_r : finrank ℝ (EuclideanSpace ℝ (Fin 1)) = 1 := by simp
-lemma rank_r_le_rank_c : finrank ℝ (EuclideanSpace ℝ (Fin 1)) < finrank ℝ ℂ := by simp
-def ε : (ℝ^1) → ℝ := fun _ ↦ 1
-
-#check (immersionRel_satisfiesHPrincipleWith (𝓡 1) (ℝ^1) 𝓘(ℝ, ℂ) ℂ 𝓘(ℝ, ℝ) ℝ rank_r_le_rank_c
-  ((Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ)
-   (fun _ ↦ zero_lt_one) (continuous_const)).bs
-
 /-
   First; we need to define the statement of the Whitney Graustein theorem
 
@@ -37,17 +26,10 @@ def ε : (ℝ^1) → ℝ := fun _ ↦ 1
 -/
 
 
-#check Immersion
-#check sphere (0 : ℝ^2) 1
 
 -- Euclidean space
-variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2)]
-variable (E' : Type*) [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = 3)]
-
-#check sphere (0 : E) 1
-
+variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] [Fact (finrank ℝ E = 2)]
 local notation "𝕊¹" => sphere (0 : E) 1
-local notation "𝕊²" => sphere (0 : E') 1
 local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℂ) ℂ
 
 #check 𝕊¹
@@ -56,24 +38,6 @@ local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℂ) ℂ
 #check 𝓡 2
 -- its slash M C I for 𝓘
 #check 𝓘(ℝ, E)
---#check Immersion (𝓡 1) 𝓘(ℝ, E) (fun x : 𝕊¹ ↦ (x : E)) ⊤
---#check immersionRel (𝓡 1) (𝕊¹) 𝓘(ℝ, E) E
-
-#check SigmaCompactSpace 𝕊¹
-
-/-
-
--- TODO the other half of the iff statement. namely that the turning number of f₀ and f₁ is equal
--- To do this one needs to properly define turning number and I don't think this has been done so far.
-theorem whitney_graustein {f₀ f₁ : 𝕊¹ → E} (h₀ : Immersion (𝓡 1) 𝓘(ℝ, E) f₀ ⊤)
-  (h₁ : Immersion (𝓡 1) 𝓘(ℝ, E) f₁ ⊤) :
-    ∃ F : ℝ → 𝕊¹ → E,
-      ContMDiff (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, E) ⊤ ↿F ∧
-        (F 0 = f₀) ∧ (F 1 = f₁) ∧
-        ∀ t, Immersion (𝓡 1) 𝓘(ℝ, E) (F t) ⊤ := by sorry
-
--/
-
 
 
 
@@ -187,9 +151,9 @@ theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℂ} (f₀_imm : LoopImme
       have C_closed : IsClosed C :=
         (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
       haveI : Nontrivial E := nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = 2)
-      haveI : Nonempty 𝕊¹ :=
-        (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
-      haveI : SigmaCompactSpace 𝕊¹ := by sorry -- To prove that 𝕊¹ is SigmaCompact
+      haveI : Nonempty 𝕊¹ := (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
+      haveI : IsCompact 𝕊¹ := isCompact_sphere (0 : E) 1
+      haveI : SigmaCompactSpace 𝕊¹ := sigmaCompactSpace_of_locally_compact_second_countable
       rcases (immersionRel_satisfiesHPrincipleWith (𝓡 1) 𝕊¹ 𝓘(ℝ, ℂ) ℂ 𝓘(ℝ, ℝ) ℝ
         ineq_rank C_closed hε_pos hε_cont).bs (family_of_formal_sol E) (family_of_formal_sol_hol_near_zero_one E)
          with ⟨F, h₁, h₂, h₃, h₄⟩
