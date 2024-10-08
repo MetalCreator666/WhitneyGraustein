@@ -44,28 +44,12 @@ local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, E) E
 
 section loops
 
-/- OLD
--- Structure for a loop in ℂ that is also an immersion.
-structure LoopImmersion (γ : 𝕊¹ → ℂ) : Prop where
-  cdiff : ContDiff ℝ ⊤ γ    -- Smooth function
-  per : Periodic γ 1         -- Period of 1
-  imm : ∀ t : ℝ , deriv γ t ≠ 0   -- Immersion condition (≠ 0, since Dim(𝕊¹) = 1)
--/
-
--- Structure for a loop in ℂ that is also an immersion.
+-- Structure for a loop in E that is also an immersion.
 structure LoopImmersion (γ : 𝕊¹ → E) : Prop where
   -- Smooth function
   cdiff : Smooth (𝓡 1) 𝓘(ℝ, E) γ
   -- Immersion condition (≠ 0, since Dim(𝕊¹) = 1)
   imm : ∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, E) γ t ≠ 0
-
-
-/- OLD
--- Structure for homotopy between loops
-structure LoopHomotopy (Γ : ℝ → ℝ → ℂ) : Prop where
-  cdiff : ContDiff ℝ ⊤ (uncurry Γ)
-  imm : ∀ t : ℝ, LoopImmersion (Γ t)
--/
 
 -- Structure for homotopy between loops
 structure LoopHomotopy (Γ : ℝ → 𝕊¹ → E) : Prop where
@@ -124,7 +108,7 @@ axiom eq_turn_hom {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ�
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ^1 →L[ℝ] E) G x₀) ∧
       (∀ t : 𝕊¹, G (0,t) = mfderiv (𝓡 1) 𝓘(ℝ, E) γ₀ t) ∧
         (∀ t : 𝕊¹, G (1,t) = mfderiv (𝓡 1) 𝓘(ℝ, E) γ₁ t) ∧
-          (∀ x₀ : ℝ × 𝕊¹, G x₀ ≠ 0)
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
 
 -- Unused for now
 -- Lemma to show that one can get turning number from lift
@@ -145,29 +129,63 @@ section whitneygraustein
 
 
 
--- Give a family of formal solutions
+-- -- Give a family of formal solutions
+-- def formal_solution_aux {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+--   FamilyOneJetSec (𝓡 1) 𝕊¹ 𝓘(ℝ, E) E 𝓘(ℝ, ℝ) ℝ :=
+--     {
+--       bs := fun t x ↦ (1 - t) • (γ₀ x : E) + t • (γ₁ x : E)
+--       ϕ := by
+--         intro n x
+--         let hom := eq_turn_hom E γ₀_imm γ₁_imm turn_eq
+--         let G := Classical.choose hom
+--         rcases (Classical.choose_spec hom) with ⟨ smooth_G, G₀, G₁, imm_G ⟩
+--         exact G (n,x)
+--       smooth' := by
+--         let hom := eq_turn_hom E γ₀_imm γ₁_imm turn_eq
+--         let G := Classical.choose hom
+--         rcases (Classical.choose_spec hom) with ⟨ smooth_G, G₀, G₁, imm_G ⟩
+--         sorry
+--     }
+
+theorem smooth_bs_wg {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) :
+  Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, E)
+      fun p : ℝ × 𝕊¹ ↦ (1 - p.1) • (γ₀ p.2 : E) + p.1 • (γ₁ p.2 : E) := by
+        refine (ContMDiff.smul ?_ ?_).add (contMDiff_fst.smul ?_)
+        exact (contDiff_const.sub contDiff_id).contMDiff.comp contMDiff_fst
+        exact γ₀_imm.cdiff.contMDiff.comp contMDiff_snd
+        exact γ₁_imm.cdiff.contMDiff.comp contMDiff_snd
+
+
+-- def formal_solution_aux2 {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+--   FamilyOneJetSec (𝓡 1) 𝕊¹ 𝓘(ℝ, E) E 𝓘(ℝ, ℝ) ℝ :=
+--     familyJoin (smooth_bs_wg E γ₀_imm γ₁_imm) <|
+--       familyTwist ()
+--         (fun p : ℝ × 𝕊¹ ↦ (eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose p)
+--         ((eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose_spec.left)
+
 def formal_solution_aux {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
   FamilyOneJetSec (𝓡 1) 𝕊¹ 𝓘(ℝ, E) E 𝓘(ℝ, ℝ) ℝ :=
     {
-      bs := fun t x ↦ (1 - t) • (γ₀ x : E) + t • (γ₁ x : E)
-      ϕ := by
-        intro n x
-        let hom := eq_turn_hom E γ₀_imm γ₁_imm turn_eq
-        let G := Classical.choose hom
-        rcases (Classical.choose_spec hom) with ⟨ smooth_G, G₀, G₁, imm_G ⟩
-        exact G (n,x)
+      -- Base space homotopy
+      bs := (fun p : ℝ × 𝕊¹ ↦ (1 - p.1) • (γ₀ p.2 : E) + p.1 • (γ₁ p.2 : E)).curry
+      -- Derivative homotopy
+      ϕ := (fun p : ℝ × 𝕊¹ ↦ (eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose p).curry
       smooth' := by
-        let hom := eq_turn_hom E γ₀_imm γ₁_imm turn_eq
-        let G := Classical.choose hom
-        rcases (Classical.choose_spec hom) with ⟨ smooth_G, G₀, G₁, imm_G ⟩
+        intro x
+        apply smoothAt_oneJetBundle_mk.mpr
+        constructor
+        exact smoothAt_snd
+        constructor
+        apply smooth_bs_wg E γ₀_imm γ₁_imm
         sorry
     }
 
+#check inTangentCoordinates
 
 def formal_solution_aux2 {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
   HtpyFormalSol 𝓡_imm :=
     { formal_solution_aux E γ₀_imm γ₁_imm turn_eq with
-      is_sol' := fun t x ↦ sorry -- Show that it is indeed a solution by picking G and showing injectivity
+      is_sol' := fun t x ↦ (eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose_spec.right.right.right (t,x) -- Show that it is indeed a solution by picking G and showing injectivity
       }
 
 def family_of_formal_sol {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion E γ₀) (γ₁_imm : LoopImmersion E γ₁) (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
