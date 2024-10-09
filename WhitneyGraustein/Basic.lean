@@ -177,7 +177,12 @@ def formal_solution_aux {γ₀ γ₁ : 𝕊¹ → E} (γ₀_imm : LoopImmersion 
         exact smoothAt_snd
         constructor
         apply smooth_bs_wg E γ₀_imm γ₁_imm
+        have ϕ_smooth : ∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ^1 →L[ℝ] E) (eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose x₀ := by
+          exact (eq_turn_hom E γ₀_imm γ₁_imm turn_eq).choose_spec.left
+        -- Left to prove that function composed with its charts is smooth to get the finished statement
+        -- maybe need another way of setting up, but I think the mathematical setup is right.
         sorry
+
     }
 
 #check inTangentCoordinates
