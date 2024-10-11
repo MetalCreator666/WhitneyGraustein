@@ -1,4 +1,5 @@
 import SphereEversion.Global.Immersion
+import WhitneyGraustein.WindingNumber
 
 noncomputable section
 
@@ -23,8 +24,8 @@ open scoped Manifold Topology
 
 -- Notation used
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] [Fact (finrank ℝ E = 2)]
-local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-local notation "𝕊¹" => sphere (0 : ℝ²) 1
+--local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
+--local notation "𝕊¹" => sphere (0 : ℝ²) 1
 local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℝ²)  ℝ²
 
 #check ℝ²
@@ -66,6 +67,8 @@ property.
 To solve this, we assume for now that this exists and build on top of the assumptions.
 In particular we will assume the following regarding turning number:
 -/
+
+
 
 axiom LoopImmersion.lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℝ → ℝ
 axiom LoopImmersion.cdiff_lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : Smooth 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) γ_imm.lift
