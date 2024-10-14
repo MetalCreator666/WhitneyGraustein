@@ -109,6 +109,17 @@ lemma turning_from_lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) :
 end turning
 
 
+section immersionlemmas
+
+-- TODO state that all from WindingNumber works with immersions
+
+-- TODO Refactor eq_turn implies existence of homotopy from WindingNumber
+-- into a homotopy of immersions giving endomorphisms ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
+
+end immersionlemmas
+
+
+
 
 section whitneygraustein
 
