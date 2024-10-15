@@ -1,4 +1,4 @@
-import Mathlib
+-- import Mathlib
 import SphereEversion.Global.Immersion
 
 noncomputable section
