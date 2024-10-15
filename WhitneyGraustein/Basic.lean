@@ -24,11 +24,7 @@ open scoped Manifold Topology
 
 -- Notation used
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] [Fact (finrank ℝ E = 2)]
---local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
---local notation "𝕊¹" => sphere (0 : ℝ²) 1
 local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℝ²)  ℝ²
-
-#check ℝ²
 
 section loops
 
@@ -47,6 +43,29 @@ structure RegularHomotopy (Γ : ℝ → 𝕊¹ → ℝ²) : Prop where
   imm : ∀ t : ℝ, LoopImmersion (Γ t)
 
 end loops
+
+
+section lemmas
+
+axiom inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0)
+
+def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
+  simp only [mem_sphere_iff_norm, sub_zero]; rw [@norm_smul]; rw [@norm_inv]; rw [@norm_norm]; simp [hx]⟩
+
+-- TODO lemma stating that a Loopimmersion has a smoothcircleloop as derivative REWRITING?
+-- TODO lemma stating that thus a Loopimmersion has lifts of its derivative with a winding number
+-- TODO definition stating that winding number of Loopimmersion deriv is called turning number
+-- TODO lemma stating that eq turning number iff homotopy between deriv
+-- TODO lemma stating that this homotopy can be written as a homotopy between ℝ² and ℝ²
+
+
+
+end lemmas
+
+
+
+
 
 
 
@@ -107,16 +126,6 @@ lemma turning_from_lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) :
     simpa using γ_imm.lift_add 0 1
 
 end turning
-
-
-section immersionlemmas
-
--- TODO state that all from WindingNumber works with immersions
-
--- TODO Refactor eq_turn implies existence of homotopy from WindingNumber
--- into a homotopy of immersions giving endomorphisms ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
-
-end immersionlemmas
 
 
 

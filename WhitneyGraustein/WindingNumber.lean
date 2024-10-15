@@ -1,6 +1,10 @@
 import Mathlib
+import SphereEversion.Global.Immersion
 
 noncomputable section
+
+open InnerProductSpace Metric FiniteDimensional Set Function LinearMap Filter ContinuousLinearMap Complex NormedSpace
+open scoped Manifold Topology
 
 -- Notations used throughout the project
 notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
@@ -24,7 +28,7 @@ def nat_proj : ℝ → 𝕊¹ :=
     by simp [EuclideanSpace.norm_eq]⟩
 
 axiom nat_proj_surj : Function.Surjective nat_proj
-axiom nat_proj_eq (x y : ℝ) (nat_proj_eq : nat_proj x = nat_proj y) : ∃ n : ℤ, x - y = n
+axiom nat_proj_eq (x y : ℝ) (nat_proj_eq : nat_proj x = nat_proj y) : ∃!n : ℤ, x - y = n
 
 end naturalprojection
 
@@ -164,25 +168,107 @@ end winding
 
 section smoothing
 
--- TODO a section on the fact that this holds when all is smooth as well
+structure SmoothCirclePath (f : ℝ → 𝕊¹) : Prop where
+  smooth : Smooth 𝓘(ℝ, ℝ) (𝓡 1) f
+
+structure SmoothCirclePathHomotopy {f : ℝ → 𝕊¹} (path_f : SmoothCirclePath f)
+  {g : ℝ → 𝕊¹} (path_g : SmoothCirclePath g) (eq_start : f 0 = g 0) (eq_end : f 1 = g 1)
+    (F : ℝ × ℝ → 𝕊¹) : Prop where
+      smooth : Smooth (𝓘(ℝ,ℝ).prod 𝓘(ℝ,ℝ)) (𝓡 1) F
+      startpoint : ∀ s : ℝ, F (0, s) = f 0
+      endpoint : ∀ s : ℝ, F (1, s) = f 1
+
+-- Structure of a lift of a path in 𝕊¹
+structure SmoothCirclePathLift {f : ℝ → 𝕊¹} (_ : SmoothCirclePath f)
+  (F : ℝ → ℝ) : Prop where
+    smooth : Smooth 𝓘(ℝ,ℝ) 𝓘(ℝ,ℝ) F
+    lift : ∀ t : ℝ, nat_proj (F t) = f t
+
+-- Structure of a lift of a circle path homotopy
+structure SmoothCirclePathHomotopyLift {f : ℝ → 𝕊¹} (path_f : SmoothCirclePath f)
+  {g : ℝ → 𝕊¹} (path_g : SmoothCirclePath g) (eq_start : f 0 = g 0) (eq_end : f 1 = g 1)
+    {H : ℝ × ℝ → 𝕊¹} (H_hom : SmoothCirclePathHomotopy path_f path_g eq_start eq_end H)
+      (F : ℝ × ℝ → ℝ) : Prop where
+        smooth : Smooth (𝓘(ℝ,ℝ).prod 𝓘(ℝ,ℝ)) 𝓘(ℝ,ℝ) F
+        startpoint : ∀ s : ℝ, nat_proj (F (0, s)) = f 0
+        endpoint : ∀ s : ℝ, nat_proj (F (1, s)) = f 1
+        lift : ∀ x : ℝ × ℝ, nat_proj (F x) = H x
+
+-- Set of startpoints
+def smoothpath_startpoints {f : ℝ → 𝕊¹} (_ : SmoothCirclePath f) :=  {x | nat_proj x = f 0}
+
+-- Existence lift of map
+axiom existence_lift_of_smooth_path {f : ℝ → 𝕊¹} (path_f : SmoothCirclePath f) :
+  ∀a ∈ smoothpath_startpoints path_f,
+    ∃!F : ℝ → ℝ, SmoothCirclePathLift path_f F
+
+-- Existence of startpoint for lift of path
+lemma existence_startpoint_smoothpathlift {f : ℝ → 𝕊¹} (path_f : SmoothCirclePath f) :
+  ∃a : ℝ, a ∈ smoothpath_startpoints path_f := by
+    apply nat_proj_surj
+
+-- Given a homotopy between circlepaths, it can be lifted
+axiom smoothcirclepath_homotopy_lifting_property {f : ℝ → 𝕊¹} (path_f : SmoothCirclePath f)
+  {g : ℝ → 𝕊¹} (path_g : SmoothCirclePath g) (eq_start : f 0 = g 0) (eq_end : f 1 = g 1)
+    {H : ℝ × ℝ → 𝕊¹} (H_hom : SmoothCirclePathHomotopy path_f path_g eq_start eq_end H)
+      {F : ℝ → ℝ} (F_lift : SmoothCirclePathLift path_f F) :
+        ∃ F' : ℝ × ℝ → ℝ, SmoothCirclePathHomotopyLift path_f path_g eq_start eq_end H_hom F'
+
+structure SmoothCircleLoop (f : ℝ → 𝕊¹) : Prop where
+  smoothcirclepath : SmoothCirclePath f
+  per : f 0 = f 1
+
+structure SmoothCircleLoopHomotopy {f : ℝ → 𝕊¹} (path_f : SmoothCircleLoop f)
+  {g : ℝ → 𝕊¹} (path_g : SmoothCircleLoop g) (eq_start_end : f 0 = g 0)
+    (F : ℝ × ℝ → 𝕊¹) : Prop where
+      smoothcirclepathhomotopy : SmoothCirclePathHomotopy path_f.smoothcirclepath path_g.smoothcirclepath eq_start_end
+        (by rw[path_f.per,path_g.per] at eq_start_end
+            exact eq_start_end) F
+
+structure SmoothCircleLoopLift {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f)
+  (F : ℝ → ℝ) : Prop where
+    smoothpathlift : SmoothCirclePathLift loop_f.smoothcirclepath F
+
+structure SmoothCircleLoopHomotopyLift {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f)
+  {g : ℝ → 𝕊¹} (loop_g : SmoothCircleLoop g) (eq_start_end : f 0 = g 0)
+    {H : ℝ × ℝ → 𝕊¹} (H_hom : SmoothCircleLoopHomotopy loop_f loop_g eq_start_end H)
+      (F : ℝ × ℝ → ℝ) : Prop where
+        smoothpathhomlift : SmoothCirclePathHomotopyLift loop_f.smoothcirclepath loop_g.smoothcirclepath eq_start_end
+          (by rw[loop_f.per,loop_g.per] at eq_start_end
+              exact eq_start_end) H_hom.smoothcirclepathhomotopy F
+
+-- Set of startpoints
+def smoothloop_startpoints {f : ℝ → 𝕊¹} (_ : SmoothCircleLoop f) :=  {x | nat_proj x = f 0}
+
+-- Existence lift of map
+axiom existence_lift_of_smoothloop {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f) :
+  ∀a ∈ smoothloop_startpoints loop_f,
+    ∃!F : ℝ → ℝ, SmoothCircleLoopLift loop_f F
+
+-- Existence of startpoint for lift of loop
+lemma existence_startpoint_smoothlooplift {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f) :
+  ∃a : ℝ, a ∈ smoothloop_startpoints loop_f := by
+    apply nat_proj_surj
+
+-- Given a homotopy between circleloops, it can be lifted
+axiom smoothcircleloop_homotopy_lifting_property {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f)
+  {g : ℝ → 𝕊¹} (loop_g : SmoothCircleLoop g) (eq_start_end : f 0 = g 0)
+    {H : ℝ × ℝ → 𝕊¹} (H_hom : SmoothCircleLoopHomotopy loop_f loop_g eq_start_end H)
+      {F : ℝ → ℝ} (F_lift : SmoothCircleLoopLift loop_f F) :
+        ∃ F' : ℝ × ℝ → ℝ, SmoothCircleLoopHomotopyLift loop_f loop_g eq_start_end H_hom F'
+
+-- Definition of the winding number
+def smooth_winding_number {f : ℝ → 𝕊¹} (loop_f : SmoothCircleLoop f) : ℤ :=
+  let a  := (existence_startpoint_smoothlooplift loop_f).choose
+  let ha := (existence_startpoint_smoothlooplift loop_f).choose_spec.out
+  let F := (existence_lift_of_smoothloop loop_f a ha).choose
+  let hF := (existence_lift_of_smoothloop loop_f a ha).choose_spec.left
+  let eq_start_end := loop_f.per
+  let h₀ := hF.smoothpathlift.lift 0
+  let h₁ := hF.smoothpathlift.lift 1
+  have nat_proj_eq_F₀_F₁ : nat_proj (F 0) = nat_proj (F 1) := by
+    rw[h₀, h₁]
+    exact eq_start_end
+  (nat_proj_eq (F 0) (F 1) nat_proj_eq_F₀_F₁).choose
 
 end smoothing
-
-
-
-section turningnumber
-
--- TODO Section that defines turning number in the smooth case
--- Winding number of derivatives
-
-end turningnumber
-
-
-
-section lemmas
-
--- TODO Taking turning number is smooth
-
--- TODO Turning number eq implies existence of homotopy
-
-end lemmas
