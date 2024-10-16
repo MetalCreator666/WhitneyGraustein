@@ -88,12 +88,7 @@ In particular we will assume the following regarding turning number:
 -/
 
 
-
-axiom LoopImmersion.lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℝ → ℝ
-axiom LoopImmersion.cdiff_lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : Smooth 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) γ_imm.lift
 axiom LoopImmersion.turningNumber {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℤ
-axiom LoopImmersion.lift_add {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) (t : ℝ) (k : ℤ) :
-  γ_imm.lift (t + k) = γ_imm.lift t + k * γ_imm.turningNumber
 
 -- Axiom that tells us that taking the turning number as a function from a homotopy is continuous
 -- To be proven once turning number is fully defined
@@ -116,14 +111,6 @@ axiom eq_turn_hom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ
         -- In our case another way needs to be done
         (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
           (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
-
--- Unused for now
--- Lemma to show that one can get turning number from lift.
-lemma turning_from_lift {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) :
-  γ_imm.turningNumber =  γ_imm.lift 1 - γ_imm.lift 0 := by
-    rw[← zero_add 1, eq_sub_iff_add_eq, add_comm]
-    apply symm
-    simpa using γ_imm.lift_add 0 1
 
 end turning
 
