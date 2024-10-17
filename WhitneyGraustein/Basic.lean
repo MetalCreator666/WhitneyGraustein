@@ -129,17 +129,18 @@ end loopimmersion
 
 section lemmas
 
-axiom inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0)
+lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0) := by
+    sorry
 
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
   simp only [mem_sphere_iff_norm, sub_zero]; rw [@norm_smul]; rw [@norm_inv]; rw [@norm_norm]; simp [hx]⟩
 
--- TODO lemma stating that a Loopimmersion has a smoothcircleloop as derivative REWRITING?
--- TODO lemma stating that thus a Loopimmersion has lifts of its derivative with a winding number
--- TODO definition stating that winding number of Loopimmersion deriv is called turning number
--- TODO lemma stating that eq turning number iff homotopy between deriv
--- TODO lemma stating that this homotopy can be written as a homotopy between ℝ² and ℝ²
+
+
+#check (𝓡 1).tangent
+--lemma deriv_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : MLoop (fun t ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ...) := by
+  --sorry
 
 
 
@@ -169,8 +170,6 @@ In particular we will assume the following regarding turning number:
 
 axiom LoopImmersion.turningNumber {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℤ
 
-
--- Axiom that tells us that taking the turning number as a function from a homotopy is continuous
 axiom LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
   Continuous (fun t ↦ (Γ_hom.imm t).turningNumber)
 
