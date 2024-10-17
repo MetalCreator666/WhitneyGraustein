@@ -1,12 +1,9 @@
 import SphereEversion.Global.Immersion
-import WhitneyGraustein.WindingNumber
 
 noncomputable section
 
 open InnerProductSpace Metric FiniteDimensional Set Function LinearMap Filter ContinuousLinearMap Complex NormedSpace
 open scoped Manifold Topology
-
--- set_option diagnostics true
 
 /-
   The goal is to prove the Whitney Graustein theorem.
@@ -21,28 +18,113 @@ open scoped Manifold Topology
      F : 𝕊¹ × [0,1] → ℝ² of immersions between f₀ and f₁ if and only if
      their turning number is equal, i.e. w(f₀') = w(f₁')"
 -/
-
--- Notation used
-variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] [Fact (finrank ℝ E = 2)]
+notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
+notation "𝕊¹" => Metric.sphere (0 : ℝ²) 1
 local notation "𝓡_imm" => immersionRel (𝓡 1) 𝕊¹ 𝓘(ℝ, ℝ²)  ℝ²
 
-section loops
 
--- Structure for a loop in E that is also an immersion.
+section Tloops
+
+structure TLoop (γ : 𝕊¹ → ℝ²) : Prop where
+  cont : Continuous γ
+  around_zero : ∀x : 𝕊¹, γ x ≠ 0
+
+structure THomotopy (Γ : ℝ → 𝕊¹ → ℝ²) : Prop where
+  cont : Continuous ↿Γ
+  loop : ∀ t : ℝ, TLoop (Γ t)
+
+end Tloops
+
+
+section axioms
+
+/- Winding number axioms -/
+axiom TLoop.windingNumber {γ : 𝕊¹ → ℝ²} (γ_tloop : TLoop γ) : ℤ
+
+axiom THomotopy.cont_windingNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_thom : THomotopy Γ) :
+  Continuous (fun t ↦ (Γ_thom.loop t).windingNumber)
+
+axiom eq_wind_conthom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ₀) (γ₁_tloop : TLoop γ₁)
+  (wind_eq : γ₀_tloop.windingNumber = γ₁_tloop.windingNumber) :
+  ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
+    (∀ (x₀ : ℝ × 𝕊¹), ContinuousAt G x₀) ∧
+      (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
+        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
+
+/- Smoothing Principle -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  -- declare a smooth manifold `M` over the pair `(E, H)`.
+  {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  (I : ModelWithCorners 𝕜 E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [SmoothManifoldWithCorners I M]
+  -- declare a smooth manifold `N` over the pair `(F, G)`.
+  {F : Type*}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
+  {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  [SmoothManifoldWithCorners J N]
+
+axiom smoothing_principle {f : M → N} (cont : Continuous f) {A : Set M} (A_clos : IsClosed A)
+  (A_smooth : ∀ x : A, SmoothAt I J f x):
+    ∃g : ℝ → M → N, (g 0 = f) ∧ (Smooth I J (g 1)) ∧
+      (∀t : ℝ, ∀x : A, g t x = f x)
+
+end axioms
+
+
+section Mloops
+
+structure MLoop (γ : 𝕊¹ → ℝ²) : Prop where
+  smooth : Smooth (𝓡 1) 𝓘(ℝ, ℝ²) γ
+  around_zero : ∀x : 𝕊¹, γ x ≠ 0
+
+structure MHomotopy (Γ : ℝ → 𝕊¹ → ℝ²) : Prop where
+  smooth : Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ²) ↿Γ
+  loop : ∀ t : ℝ, MLoop (Γ t)
+
+lemma mloop_to_tloop {γ : 𝕊¹ → ℝ²} (γ_mloop : MLoop γ) : TLoop γ := by refine
+  { cont := γ_mloop.smooth.continuous, around_zero := γ_mloop.around_zero }
+
+lemma mhom_to_thom {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_mhom : MHomotopy Γ) : THomotopy Γ := by refine
+  { cont := Γ_mhom.smooth.continuous, loop := fun t ↦ mloop_to_tloop (Γ_mhom.loop t) }
+
+end Mloops
+
+
+section smooth
+
+/- smoothed version of winding number axioms -/
+def MLoop.windingNumber {γ : 𝕊¹ → ℝ²} (γ_mloop : MLoop γ) : ℤ :=
+  (mloop_to_tloop γ_mloop).windingNumber
+
+lemma MHomotopy.cont_windingNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_mhom : MHomotopy Γ) :
+  Continuous (fun t ↦ (Γ_mhom.loop t).windingNumber) :=
+    (mhom_to_thom Γ_mhom).cont_windingNumber
+
+lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ₀) (γ₁_mloop : MLoop γ₁)
+  (wind_eq : γ₀_mloop.windingNumber = γ₁_mloop.windingNumber) :
+  ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
+    (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
+      (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
+        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by sorry
+
+end smooth
+
+
+section loopimmersion
+
 structure LoopImmersion (γ : 𝕊¹ → ℝ²) : Prop where
-  -- Smooth function
-  cdiff : Smooth (𝓡 1) 𝓘(ℝ, ℝ²) γ
-  -- Immersion condition
+  smooth : Smooth (𝓡 1) 𝓘(ℝ, ℝ²) γ
   imm :  ∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)
 
--- Structure for homotopy between LoopImmersions
 structure RegularHomotopy (Γ : ℝ → 𝕊¹ → ℝ²) : Prop where
-  -- Smooth as function ℝ × 𝕊¹ → E
-  cdiff : Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ²) ↿Γ
-  -- LoopImmersion at every point
+  smooth : Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ²) ↿Γ
   imm : ∀ t : ℝ, LoopImmersion (Γ t)
 
-end loops
+end loopimmersion
 
 
 section lemmas
@@ -69,14 +151,12 @@ end lemmas
 
 
 
+
+-- Goal is to make these lemmas to only have to resort to topology before the proof
+-- as would normally be done when using h-principle
 section turning
 
 /-
-TODO: Structure the axioms in a way that reflects the mathematics as we know it.
-Making sure that single axioms don't blackbox several theorems/definitions at once.
-
-IMPORTANT
-
 To do the Whitney Graustein theorem fully, one needs the proper definition for
 turning number of a loop. This invokes the definition of a winding number and
 thus needs covering space theory. In particular, we want to be able to count
@@ -87,28 +167,18 @@ To solve this, we assume for now that this exists and build on top of the assump
 In particular we will assume the following regarding turning number:
 -/
 
-
 axiom LoopImmersion.turningNumber {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℤ
 
+
 -- Axiom that tells us that taking the turning number as a function from a homotopy is continuous
--- To be proven once turning number is fully defined
 axiom LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
   Continuous (fun t ↦ (Γ_hom.imm t).turningNumber)
 
---lemma aux (x : E) : E = TangentSpace 𝓘(ℝ, E) x := by exact rfl
---lemma aux2 (x : ℝ^1) : ℝ^1 = TangentSpace (𝓡 1) x := by exact rfl
 axiom eq_turn_hom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
   (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) :
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
-      -- Idea here is that it becomes a homotopy of endomorphisms
-      -- Thus moving the space around the loops to homotope the loops
-      -- It becomes a homotopy of the space E instead of a homotopy of the loops
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
-        -- TODO : This needs to change, instead of the id, we want this to be some endomorphism
-        -- that changes γ₀ into γ₁ in general. For sphere eversion, one would choose this because
-        -- rotation map is easy to choose as endomorphisms, because here it would simply become w ↦ -w.
-        -- In our case another way needs to be done
         (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
           (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
 
@@ -125,8 +195,8 @@ theorem smooth_bs_wg {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion
       fun p : ℝ × 𝕊¹ ↦ (1 - p.1) • (γ₀ p.2 : ℝ²) + p.1 • (γ₁ p.2 : ℝ²) := by
         refine (ContMDiff.smul ?_ ?_).add (contMDiff_fst.smul ?_)
         exact (contDiff_const.sub contDiff_id).contMDiff.comp contMDiff_fst
-        exact γ₀_imm.cdiff.contMDiff.comp contMDiff_snd
-        exact γ₁_imm.cdiff.contMDiff.comp contMDiff_snd
+        exact γ₀_imm.smooth.contMDiff.comp contMDiff_snd
+        exact γ₁_imm.smooth.contMDiff.comp contMDiff_snd
 
 -- Construction of family of one jet sections.
 -- Does so by taking the one jet extension of γ₀ and 'replacing' the linear map with the homotopy from equal turning number.
@@ -134,7 +204,7 @@ def formal_solution_aux2 {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmer
   (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
     FamilyOneJetSec (𝓡 1) 𝕊¹ 𝓘(ℝ, ℝ²)  ℝ² 𝓘(ℝ, ℝ) ℝ :=
       familyJoin (smooth_bs_wg γ₀_imm γ₁_imm) <|
-        familyTwist (drop (oneJetExtSec ⟨γ₀, γ₀_imm.cdiff⟩))
+        familyTwist (drop (oneJetExtSec ⟨γ₀, γ₀_imm.smooth⟩))
           (fun p : ℝ × 𝕊¹ ↦ (eq_turn_hom γ₀_imm γ₁_imm turn_eq).choose p)
           ((eq_turn_hom γ₀_imm γ₁_imm turn_eq).choose_spec.left)
 
@@ -253,9 +323,9 @@ theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopIm
       -- Remains to show that F is a Loophomotopy f₀ ~ f₁
       use F
       constructor
-      refine { cdiff := h₁, imm := ?h.left.imm }
+      refine { smooth := h₁, imm := ?h.left.imm }
       intro t
-      refine { cdiff := ?h.left.imm.cdiff, imm := ?h.left.imm.imm }
+      refine { smooth := ?h.left.imm.cdiff, imm := ?h.left.imm.imm }
       exact Smooth.uncurry_left 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) h₁ t
       exact fun t_1 ↦ h₄ t t_1
       constructor
