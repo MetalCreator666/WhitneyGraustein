@@ -139,8 +139,9 @@ def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
 
 
 #check (𝓡 1).tangent
---lemma deriv_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : MLoop (fun t ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ...) := by
-  --sorry
+--lemma deriv_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  --MLoop (fun x ↦ tangentMap (𝓡 1) 𝓘(ℝ, ℝ²) γ x ...) := by
+
 
 
 
