@@ -136,14 +136,14 @@ lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
   simp only [mem_sphere_iff_norm, sub_zero]; rw [@norm_smul]; rw [@norm_inv]; rw [@norm_norm]; simp [hx]⟩
 
+/- The unit section of the tangent bundle of the circle -/
+def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
+lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by sorry
 
-#check (𝓡 1).tangent
---lemma deriv_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  --MLoop (fun x ↦ tangentMap (𝓡 1) 𝓘(ℝ, ℝ²) γ x ...) := by
-
-
-
+lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
+  MLoop (fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x (unitSection x).snd) := by
+    sorry
 
 end lemmas
 
@@ -169,18 +169,26 @@ To solve this, we assume for now that this exists and build on top of the assump
 In particular we will assume the following regarding turning number:
 -/
 
-axiom LoopImmersion.turningNumber {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) : ℤ
+/- Definition of the turning number -/
+def turningNumber {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) := (deriv_to_mloop loop_imm).windingNumber
 
-axiom LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
-  Continuous (fun t ↦ (Γ_hom.imm t).turningNumber)
+lemma LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
+  Continuous (fun t ↦ turningNumber (Γ_hom.imm t)) := by
+    refine THomotopy.cont_windingNumber ?Γ_thom
+    refine
+    {
+      cont := by sorry,
+      loop := fun t : ℝ ↦ mloop_to_tloop <| deriv_to_mloop (Γ_hom.imm t)
+    }
 
-axiom eq_turn_hom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) :
+lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
+  (turn_eq : turningNumber f₀_imm = turningNumber f₁_imm) :
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
-        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
+        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₁ s) ∧
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by sorry
+            -- eq_wind_smoothhom (deriv_to_mloop f₀_imm) (deriv_to_mloop f₁_imm) turn_eq
 
 end turning
 
@@ -201,7 +209,7 @@ theorem smooth_bs_wg {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion
 -- Construction of family of one jet sections.
 -- Does so by taking the one jet extension of γ₀ and 'replacing' the linear map with the homotopy from equal turning number.
 def formal_solution_aux2 {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm):
     FamilyOneJetSec (𝓡 1) 𝕊¹ 𝓘(ℝ, ℝ²)  ℝ² 𝓘(ℝ, ℝ) ℝ :=
       familyJoin (smooth_bs_wg γ₀_imm γ₁_imm) <|
         familyTwist (drop (oneJetExtSec ⟨γ₀, γ₀_imm.smooth⟩))
@@ -210,7 +218,7 @@ def formal_solution_aux2 {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmer
 
 -- Proving that the construction made in `def:formal_solution_aux2` is a solution to the immersion relation.
 def formal_solution_aux {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm):
     HtpyFormalSol 𝓡_imm :=
       {
         formal_solution_aux2 γ₀_imm γ₁_imm turn_eq with
@@ -219,32 +227,32 @@ def formal_solution_aux {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmers
 
 -- Reindexing the homotopy of formal solutions from `def:formal_solution_aux` by a smooth stepfunction.
 def family_of_formal_sol {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm):
     HtpyFormalSol 𝓡_imm := (formal_solution_aux γ₀_imm γ₁_imm turn_eq).reindex
       ⟨smoothStep, contMDiff_iff_contDiff.mpr smoothStep.smooth⟩
 
 -- simplification lemma that refactors the reindexed homotopy between loops in the formal solution to concrete function.
 @[simp]
 theorem formal_sol_bs {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) (t : ℝ):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm) (t : ℝ):
     (family_of_formal_sol γ₀_imm γ₁_imm turn_eq t).bs = fun x : 𝕊¹ ↦
       (1 - smoothStep t : ℝ) • (γ₀ x : ℝ²) + (smoothStep t : ℝ) • (γ₁ x : ℝ²) :=
     rfl
 
 -- proof that the straight line homotopy is indeed a homotopy from `γ₀`
 theorem formal_sol_zero {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) (x : 𝕊¹):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm) (x : 𝕊¹):
     (family_of_formal_sol γ₀_imm γ₁_imm turn_eq).bs (0,x).1 (0,x).2 = γ₀ x := by simp
 
 -- proof that the straight line homotopy is indeed a homotopy to `γ₁`
 theorem formal_sol_one {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) (x : 𝕊¹):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm) (x : 𝕊¹):
     (family_of_formal_sol γ₀_imm γ₁_imm turn_eq).bs (1,x).1 (1,x).2 = γ₁ x := by simp
 
 -- proof that the formal solution is holonomic at zero, i.e. derivative of straight line homotopy at zero
 -- is equivalent to composition of derivative of γ₀ and the homotopy at zero gotten from equal turning numbers.
 theorem formal_sol_hol_at_zero {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) {t : ℝ} (ht : t < 1 / 4) :
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm) {t : ℝ} (ht : t < 1 / 4) :
     (family_of_formal_sol γ₀_imm γ₁_imm turn_eq t).toOneJetSec.IsHolonomic := by
       intro x
       change
@@ -261,7 +269,7 @@ theorem formal_sol_hol_at_zero {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : Loo
 -- proof that the formal solution is holonomic at one, i.e. derivative of straight line homotopy at one
 -- is equivalent to composition of derivative of γ₀ and the homotopy at one gotten from equal turning numbers.
 theorem formal_sol_hol_at_one {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber) {t : ℝ} (ht : 3 / 4 < t) :
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm) {t : ℝ} (ht : 3 / 4 < t) :
     (family_of_formal_sol γ₀_imm γ₁_imm turn_eq t).toOneJetSec.IsHolonomic := by
       intro x
       change
@@ -282,7 +290,7 @@ theorem formal_sol_hol_at_one {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : Loop
 -- Finds nbhds of C, because we used the smooth step function
 -- Then finishes using `theorem:formal_sol_hol_at_zero` and `theorem:formal_sol_hol_at_one`
 theorem family_of_formal_sol_hol_near_zero_one {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : LoopImmersion γ₀) (γ₁_imm : LoopImmersion γ₁)
-  (turn_eq : γ₀_imm.turningNumber = γ₁_imm.turningNumber):
+  (turn_eq : turningNumber γ₀_imm = turningNumber γ₁_imm):
     ∀ᶠ s : ℝ × 𝕊¹ near {0, 1} ×ˢ univ, (family_of_formal_sol γ₀_imm γ₁_imm turn_eq s.1).toOneJetSec.IsHolonomicAt s.2 := by
       have : (Iio (1 / 4 : ℝ) ∪ Ioi (3 / 4)) ×ˢ (univ : Set 𝕊¹) ∈ 𝓝ˢ (({0, 1} : Set ℝ) ×ˢ univ) := by
         refine ((isOpen_Iio.union isOpen_Ioi).prod isOpen_univ).mem_nhdsSet.mpr ?_
@@ -301,7 +309,7 @@ theorem family_of_formal_sol_hol_near_zero_one {γ₀ γ₁ : 𝕊¹ → ℝ²} 
 -- first implication whitney graustein
 -- Assuming turning number is equal => ∃ homotopy
 theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
-  (eq_turn : f₀_imm.turningNumber = f₁_imm.turningNumber) :
+  (eq_turn : turningNumber f₀_imm = turningNumber f₁_imm) :
     ∃F : ℝ → 𝕊¹ → ℝ², RegularHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁) := by
       -- First step is to get H-principle result
       have ineq_rank : finrank ℝ (ℝ^1) < finrank ℝ  ℝ² := by simp
@@ -340,7 +348,7 @@ theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopIm
 -- Assuming ∃ homotopy => turning number eq
 theorem whitney_graustein_right {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
   (hom : ∃ F : ℝ → 𝕊¹ → ℝ², RegularHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) :
-    f₀_imm.turningNumber = f₁_imm.turningNumber := by
+    turningNumber f₀_imm = turningNumber f₁_imm := by
 
       -- choose a working F and extract its properties
       let F := Classical.choose hom
@@ -352,10 +360,10 @@ theorem whitney_graustein_right {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopI
         exact (Classical.choose_spec hom).right.right
 
       -- Construct the function ℝ → ℤ that determines turning number per time frame
-      let G := fun t ↦ (loop_hom.imm t).turningNumber
-      have G₀ : G 0 = f₀_imm.turningNumber := by
+      let G := fun t ↦ turningNumber (loop_hom.imm t)
+      have G₀ : G 0 = turningNumber f₀_imm := by
         simp_rw[G, F₀]
-      have G₁ : G 1 = f₁_imm.turningNumber := by
+      have G₁ : G 1 = turningNumber f₁_imm := by
         simp_rw[G, F₁]
 
       -- Prove continuity of G (taking turning number)
@@ -375,7 +383,7 @@ theorem whitney_graustein_right {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopI
 
 -- for completeness the theorem in its entirety
 theorem whitney_graustein {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁) :
-  (∃F : ℝ → 𝕊¹ → ℝ², RegularHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) ↔ (f₀_imm.turningNumber = f₁_imm.turningNumber) :=
+  (∃F : ℝ → 𝕊¹ → ℝ², RegularHomotopy F ∧ (F 0 = f₀) ∧ (F 1 = f₁)) ↔ (turningNumber f₀_imm = turningNumber f₁_imm) :=
     Iff.intro (whitney_graustein_right f₀_imm f₁_imm) (whitney_graustein_left f₀_imm f₁_imm)
 
 end whitneygraustein
