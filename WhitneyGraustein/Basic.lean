@@ -58,7 +58,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   -- declare a smooth manifold `M` over the pair `(E, H)`.
   {E : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
-  (I : ModelWithCorners 𝕜 E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  (I : ModelWithCorners 𝕜 E H) {M : Type*} [TopologicalSpace M][ChartedSpace H M]
   [SmoothManifoldWithCorners I M]
   -- declare a smooth manifold `N` over the pair `(F, G)`.
   {F : Type*}
@@ -70,6 +70,7 @@ axiom smoothing_principle {f : M → N} (cont : Continuous f) {A : Set M} (A_clo
   (A_smooth : ∀ x : A, SmoothAt I J f x):
     ∃g : ℝ → M → N, (g 0 = f) ∧ (Smooth I J (g 1)) ∧
       (∀t : ℝ, ∀x : A, g t x = f x)
+
 
 end axioms
 
@@ -103,13 +104,25 @@ lemma MHomotopy.cont_windingNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_mhom : MH
   Continuous (fun t ↦ (Γ_mhom.loop t).windingNumber) :=
     (mhom_to_thom Γ_mhom).cont_windingNumber
 
+
+
 lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ₀) (γ₁_mloop : MLoop γ₁)
   (wind_eq : γ₀_mloop.windingNumber = γ₁_mloop.windingNumber) :
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
         (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by sorry
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
+            let h := eq_wind_conthom (mloop_to_tloop γ₀_mloop) (mloop_to_tloop γ₁_mloop) wind_eq
+            let G := Classical.choose h
+            let G_prop := Classical.choose_spec h
+            let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
+            have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
+            have G_smoothat_A : ∀ x : A, SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
+            -- let h1 := smoothing_principle /- ℝ × 𝕊¹ is manifold and ℝ² →L[ℝ] ℝ² too ... -/
+            --   (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
+            sorry
+
 
 end smooth
 
@@ -129,9 +142,8 @@ end loopimmersion
 
 section lemmas
 
-lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0) := by
-    sorry
+axiom inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0)
 
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
   simp only [mem_sphere_iff_norm, sub_zero]; rw [@norm_smul]; rw [@norm_inv]; rw [@norm_norm]; simp [hx]⟩
@@ -139,11 +151,15 @@ def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
 /- The unit section of the tangent bundle of the circle -/
 def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
-lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by sorry
+axiom smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection
 
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
   MLoop (fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x (unitSection x).snd) := by
-    sorry
+    refine
+    {
+      smooth := sorry,
+      around_zero := sorry
+    }
 
 end lemmas
 
@@ -177,7 +193,7 @@ lemma LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : 
     refine THomotopy.cont_windingNumber ?Γ_thom
     refine
     {
-      cont := by sorry,
+      cont := sorry,
       loop := fun t : ℝ ↦ mloop_to_tloop <| deriv_to_mloop (Γ_hom.imm t)
     }
 
@@ -187,8 +203,8 @@ lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀)
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
         (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by sorry
-            -- eq_wind_smoothhom (deriv_to_mloop f₀_imm) (deriv_to_mloop f₁_imm) turn_eq
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) :=
+            sorry --eq_wind_smoothhom (deriv_to_mloop f₀_imm) (deriv_to_mloop f₁_imm) turn_eq
 
 end turning
 
