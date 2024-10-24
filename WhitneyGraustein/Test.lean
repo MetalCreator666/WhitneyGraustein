@@ -6,8 +6,18 @@ notation "ℝ¹" => EuclideanSpace ℝ (Fin 1)
 notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 notation "𝕊¹" => Metric.sphere (0 : ℝ²) 1
 
+variable {x y : Fin 1}
+
 lemma vector_eq_val_mult_unit (s : 𝕊¹) (v : TangentSpace 𝓘(ℝ, ℝ¹) s):
-  ∃v' : ℝ, v = v' • (fun x ↦ 1 : TangentSpace 𝓘(ℝ, ℝ¹) s) := by sorry
+  ∃v' : ℝ, v = v' • (fun x ↦ 1 : TangentSpace 𝓘(ℝ, ℝ¹) s) := by
+    use v 0
+    rw [@Pi.smul_def]
+    simp
+    have h2 : ∀x y : Fin 1, v x = (fun _ ↦ v 0) y := by
+      intro x _
+      let x := Fin.fin_one_eq_zero x
+      exact congrArg v x
+    apply (Function.funext_iff_of_subsingleton x y).mp (h2 x y)
 
 
 

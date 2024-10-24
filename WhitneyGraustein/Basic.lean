@@ -183,6 +183,8 @@ lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
       around_zero := sorry
     }
 
+variable (x y : Fin 1)
+
 lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ : 𝕊¹ → ℝ²}
   (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁) (s : 𝕊¹):
     (G (1, s)) (unit_deriv f₀_imm s) = (unit_deriv f₁_imm s) →
@@ -193,7 +195,14 @@ lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ 
           rw[unit_deriv, vector_deriv, unitSection] at h
         simp at h
         have h1 : ∃v' : ℝ, v = v' • (fun x ↦ 1 : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) s) := by
-          sorry
+          use v 0
+          rw [@Pi.smul_def]
+          simp
+          have h2 : ∀x y : Fin 1, v x = (fun _ ↦ v 0) y := by
+            intro x _
+            let x := Fin.fin_one_eq_zero x
+            exact congrArg v x
+          apply (funext_iff_of_subsingleton x y).mp (h2 x y)
         let v' := Classical.choose h1
         let v'_spec := Classical.choose_spec h1
         apply congrArg (HSMul.hSMul v') at h
@@ -259,7 +268,7 @@ lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀)
               = mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s v := by
                 intro s
                 let h₁_lem1 := G_prop.right.right.left s
-                exact unit_implies_all G f₀_imm f₁_imm s h₁_lem1
+                exact unit_implies_all 0 0 G f₀_imm f₁_imm s h₁_lem1
             exact h₁
             exact G_prop.right.right.right
 
