@@ -49,10 +49,7 @@ axiom eq_wind_conthom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ�
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), ContinuousAt G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
-        -- TODO
-        -- Not what it needs to be right now
-        -- not derivatives, but instead just γ₀ and γ₁
-        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
+        (∀ s : 𝕊¹, (G (1,s)) (γ₀ s) = γ₁ s) ∧
           (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
 
 /- Smoothing Principle -/
@@ -107,24 +104,22 @@ lemma MHomotopy.cont_windingNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_mhom : MH
   Continuous (fun t ↦ (Γ_mhom.loop t).windingNumber) :=
     (mhom_to_thom Γ_mhom).cont_windingNumber
 
-
-
 lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ₀) (γ₁_mloop : MLoop γ₁)
   (wind_eq : γ₀_mloop.windingNumber = γ₁_mloop.windingNumber) :
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
-        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
-            let h := eq_wind_conthom (mloop_to_tloop γ₀_mloop) (mloop_to_tloop γ₁_mloop) wind_eq
-            let G := Classical.choose h
-            let G_prop := Classical.choose_spec h
-            let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
-            have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
-            have G_smoothat_A : ∀ x : A, SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
-            -- let h1 := smoothing_principle /- ℝ × 𝕊¹ is manifold and ℝ² →L[ℝ] ℝ² too ... -/
-            --   (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
-            sorry
+        (∀ s : 𝕊¹, (G (1,s)) (γ₀ s) = (γ₁ s)) ∧
+            (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
+              let h := eq_wind_conthom (mloop_to_tloop γ₀_mloop) (mloop_to_tloop γ₁_mloop) wind_eq
+              let G := Classical.choose h
+              let G_prop := Classical.choose_spec h
+              let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
+              have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
+              have G_smoothat_A : ∀ x : A, SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
+              -- let h1 := smoothing_principle /- ℝ × 𝕊¹ is manifold and ℝ² →L[ℝ] ℝ² too ... -/
+              --   (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
+              sorry
 
 
 end smooth
@@ -154,15 +149,59 @@ def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
 /- The unit section of the tangent bundle of the circle -/
 def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
+def e (t : 𝕊¹) : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) t := fun _ ↦ 1
+
+
+
+
+
 axiom smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection
 
+
+-- lemma deriv_smooth {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+
+
+ -- Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x e) := by sorry
+
+
+variable {κ : 𝕊¹ → ℝ²}
+#check fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) κ x (unitSection x).snd
+
+variable {x : 𝕊¹} {w : TangentSpace (𝓡 1) x}
+
+def vector_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) :=
+  fun x v ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) v
+
+def unit_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :=
+  fun x ↦ vector_deriv loop_imm x (unitSection x).snd
+
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
-  MLoop (fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x (unitSection x).snd) := by
+  MLoop (unit_deriv loop_imm) := by
     refine
     {
       smooth := sorry,
       around_zero := sorry
     }
+
+lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ : 𝕊¹ → ℝ²}
+  (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁) (s : 𝕊¹):
+    (G (1, s)) (unit_deriv f₀_imm s) = (unit_deriv f₁_imm s) →
+       ∀v : TangentSpace (𝓡 1) s, (G (1, s)) ((mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₀ s) v)
+       = mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s v := by
+        intro h v
+        repeat
+          rw[unit_deriv, vector_deriv, unitSection] at h
+        simp at h
+        have h1 : ∃v' : ℝ, v = v' • (fun x ↦ 1 : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) s) := by
+          sorry
+        let v' := Classical.choose h1
+        let v'_spec := Classical.choose_spec h1
+        apply congrArg (HSMul.hSMul v') at h
+        rw[← ContinuousLinearMap.map_smul_of_tower (G (1,s)) v'] at h
+        rw[← ContinuousLinearMap.map_smul_of_tower (mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₀ s) v'] at h
+        rw[← ContinuousLinearMap.map_smul_of_tower (mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s) v'] at h
+        rw[← v'_spec] at h
+        exact h
 
 end lemmas
 
@@ -196,7 +235,7 @@ lemma LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : 
     refine THomotopy.cont_windingNumber ?Γ_thom
     refine
     {
-      cont := sorry,
+      cont := sorry ,
       loop := fun t : ℝ ↦ mloop_to_tloop <| deriv_to_mloop (Γ_hom.imm t)
     }
 
@@ -205,9 +244,24 @@ lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀)
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
-        (∀ s : 𝕊¹, (G (1,s)).comp (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₀ s) = mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) :=
-            sorry --eq_wind_smoothhom (deriv_to_mloop f₀_imm) (deriv_to_mloop f₁_imm) turn_eq
+        (∀ s : 𝕊¹, ∀v : TangentSpace (𝓡 1) s, (G (1,s)) ((mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₀ s) v) = (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₁ s) v) ∧
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
+            let h := eq_wind_smoothhom (deriv_to_mloop f₀_imm) (deriv_to_mloop f₁_imm) turn_eq
+            let G := Classical.choose h
+            use G
+            let G_prop := Classical.choose_spec h
+            constructor
+            exact G_prop.left
+            constructor
+            exact G_prop.right.left
+            constructor
+            have h₁ : ∀ s : 𝕊¹, ∀v : TangentSpace (𝓡 1) s, (G (1, s)) ((mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₀ s) v)
+              = mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s v := by
+                intro s
+                let h₁_lem1 := G_prop.right.right.left s
+                exact unit_implies_all G f₀_imm f₁_imm s h₁_lem1
+            exact h₁
+            exact G_prop.right.right.right
 
 end turning
 
@@ -302,7 +356,7 @@ theorem formal_sol_hol_at_one {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_imm : Loop
         simp [smoothStep.of_gt ht]
       ext v
       erw [ContinuousLinearMap.coe_comp', Function.comp_apply, smoothStep.of_gt ht]
-      rw [← (eq_turn_hom γ₀_imm γ₁_imm turn_eq).choose_spec.right.right.left x];
+      rw [← (eq_turn_hom γ₀_imm γ₁_imm turn_eq).choose_spec.right.right.left x v];
       rfl
 
 -- Proof that the family of formal solutions is holonomic near C := {0,1} x 𝕊¹
