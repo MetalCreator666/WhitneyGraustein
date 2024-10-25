@@ -53,7 +53,6 @@ axiom eq_wind_conthom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ�
           (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
 
 /- Smoothing Principle -/
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   -- declare a smooth manifold `M` over the pair `(E, H)`.
   {E : Type*}
@@ -70,7 +69,6 @@ axiom smoothing_principle {f : M → N} (cont : Continuous f) {A : Set M} (A_clo
   (A_smooth : ∀ x : A, SmoothAt I J f x):
     ∃g : ℝ → M → N, (g 0 = f) ∧ (Smooth I J (g 1)) ∧
       (∀t : ℝ, ∀x : A, g t x = f x)
-
 
 end axioms
 
@@ -121,7 +119,6 @@ lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ
               --   (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
               sorry
 
-
 end smooth
 
 
@@ -140,32 +137,19 @@ end loopimmersion
 
 section lemmas
 
-axiom inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0)
+lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0) := by
+    sorry
 
+/- Thanks to Ruben Van de Velde -/
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
   simp only [mem_sphere_iff_norm, sub_zero]; rw [@norm_smul]; rw [@norm_inv]; rw [@norm_norm]; simp [hx]⟩
 
 /- The unit section of the tangent bundle of the circle -/
 def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
-def e (t : 𝕊¹) : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) t := fun _ ↦ 1
-
-
-
-
-
-axiom smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection
-
-
--- lemma deriv_smooth {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-
-
- -- Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x e) := by sorry
-
-
-variable {κ : 𝕊¹ → ℝ²}
-#check fun x : 𝕊¹ ↦ mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) κ x (unitSection x).snd
+lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by
+  sorry
 
 variable {x : 𝕊¹} {w : TangentSpace (𝓡 1) x}
 
@@ -179,8 +163,34 @@ lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
   MLoop (unit_deriv loop_imm) := by
     refine
     {
+      smooth := by
+        #check contMDiff_prod_iff
+        sorry,
+      around_zero := by
+        intro x
+        simp_rw[unit_deriv, vector_deriv, unitSection]
+        let h := (inj_def loop_imm).mp loop_imm.imm x
+        apply by_contradiction
+        intro hyp
+        rw [@Mathlib.Tactic.PushNeg.not_ne_eq] at hyp
+        let h2 := ((mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x).map_eq_zero_iff (loop_imm.imm x)).mp hyp
+        have h3 : ∀p q : Fin 1, (fun x ↦ 1) p = (0 : TangentSpace 𝓘(ℝ, ℝ^1) x) q := by
+          intro p q
+          let y := Fin.fin_one_eq_zero q
+          exact
+            Eq.symm
+              ((fun {x} ↦ EReal.coe_eq_one.mp)
+                (congrArg Real.toEReal (congrFun (_root_.id (Eq.symm h2)) q)))
+        let h4 := h3 0 0
+        have h5 : (0 : TangentSpace 𝓘(ℝ, ℝ^1) x) 0 = (fun x ↦ 0) 0 := by exact rfl
+        simp [h5] at h4
+    }
+
+lemma reghom_to_mhom {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_reghom : RegularHomotopy Γ) :
+  MHomotopy (fun t ↦ unit_deriv (Γ_reghom.imm t)) := by refine
+    {
       smooth := sorry,
-      around_zero := sorry
+      loop := fun t ↦ deriv_to_mloop (Γ_reghom.imm t)
     }
 
 variable (x y : Fin 1)
@@ -203,6 +213,14 @@ lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ 
             let x := Fin.fin_one_eq_zero x
             exact congrArg v x
           apply (funext_iff_of_subsingleton x y).mp (h2 x y)
+          /-
+          Thanks Johan Commelin for help with the above proof.
+          I kept my longer version, but Johan's shorter version is commented below.
+            use v 0
+            funext i
+            fin_cases i
+            simp
+          -/
         let v' := Classical.choose h1
         let v'_spec := Classical.choose_spec h1
         apply congrArg (HSMul.hSMul v') at h
@@ -213,12 +231,6 @@ lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ 
         exact h
 
 end lemmas
-
-
-
-
-
-
 
 
 -- Goal is to make these lemmas to only have to resort to topology before the proof
@@ -239,14 +251,9 @@ In particular we will assume the following regarding turning number:
 /- Definition of the turning number -/
 def turningNumber {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) := (deriv_to_mloop loop_imm).windingNumber
 
-lemma LoopHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
+lemma RegularHomotopy.cont_turningNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_hom : RegularHomotopy Γ) :
   Continuous (fun t ↦ turningNumber (Γ_hom.imm t)) := by
-    refine THomotopy.cont_windingNumber ?Γ_thom
-    refine
-    {
-      cont := sorry ,
-      loop := fun t : ℝ ↦ mloop_to_tloop <| deriv_to_mloop (Γ_hom.imm t)
-    }
+    apply MHomotopy.cont_windingNumber <| reghom_to_mhom Γ_hom
 
 lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
   (turn_eq : turningNumber f₀_imm = turningNumber f₁_imm) :
@@ -273,8 +280,6 @@ lemma eq_turn_hom {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀)
             exact G_prop.right.right.right
 
 end turning
-
-
 
 
 section whitneygraustein
@@ -387,7 +392,6 @@ theorem family_of_formal_sol_hol_near_zero_one {γ₀ γ₁ : 𝕊¹ → ℝ²} 
       · exact formal_sol_hol_at_zero γ₀_imm γ₁_imm turn_eq ht x
       · exact formal_sol_hol_at_one γ₀_imm γ₁_imm turn_eq ht x
 
-
 -- first implication whitney graustein
 -- Assuming turning number is equal => ∃ homotopy
 theorem whitney_graustein_left {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁)
@@ -451,7 +455,7 @@ theorem whitney_graustein_right {f₀ f₁ : 𝕊¹ → ℝ²} (f₀_imm : LoopI
       -- Prove continuity of G (taking turning number)
       -- Uses axiom cont_turningNumber!!
       have G_cont : Continuous G := by
-        exact LoopHomotopy.cont_turningNumber loop_hom
+        exact RegularHomotopy.cont_turningNumber loop_hom
 
       -- Prove continuous G => G constant
       have G_const : ∀ t s, G t = G s := by
