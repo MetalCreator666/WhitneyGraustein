@@ -139,7 +139,19 @@ section lemmas
 
 lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
   (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0) := by
-    sorry
+    constructor
+    · intro h x
+      have h0 : Module.rank ℝ (TangentSpace (𝓡 1) x) = 1 := by
+        refine rank_eq_one_iff_finrank_eq_one.mpr ?_
+        exact finrank_euclideanSpace_fin
+      have h1 : Module.rank ℝ ↥(LinearMap.range (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x)) = 1 := by
+        --let h10 := rank_range_of_injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) (h x)
+        sorry
+      sorry
+    · intro h x
+      sorry
+
+
 
 /- Thanks to Ruben Van de Velde -/
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
@@ -149,51 +161,70 @@ def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
 def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
 lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by
+  -- join of two smooth maps `id` and `const`
   sorry
 
-variable {x : 𝕊¹} {w : TangentSpace (𝓡 1) x}
+def unit_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
+  (tangentMap (𝓡 1) 𝓘(ℝ, ℝ²) γ).comp unitSection
 
-def vector_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) :=
-  fun x v ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) v
+lemma smooth_unit_deriv  {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  Smooth (𝓡 1) (𝓘(ℝ, ℝ²).prod 𝓘(ℝ, ℝ²)) (unit_deriv loop_imm) := by
+    -- Composition of smooth maps `tangentMap` and `unitSection`
+    have h : Smooth ((𝓡 1).prod (𝓡 1)) (𝓘(ℝ, ℝ²).prod 𝓘(ℝ, ℝ²)) (tangentMap (𝓡 1) 𝓘(ℝ, ℝ²) γ) := by
+      refine ContMDiff.contMDiff_tangentMap (fun x ↦ loop_imm.smooth x) ?hmn
+      exact OrderTop.le_top (⊤ + 1)
+    apply h.comp smooth_unit
+
+def loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : 𝕊¹ → ℝ² :=
+  Bundle.TotalSpace.snd.comp (unit_deriv loop_imm)
+
+lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (loop_deriv loop_imm) := by
+    -- Composition of smooth map `unit_deriv` and `snd`
+    sorry
 
 
+--variable {x : 𝕊¹} {w : TangentSpace (𝓡 1) x}
+
+--def vector_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) :=
+  --fun x v ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) v
+
+--#check tangentMap (𝓡 1) 𝓘(ℝ, ℝ²)
 
 --lemma smooth_vector_deriv {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) :
   --∀x : 𝕊¹, SmoothAt (𝓡 1) 𝓘(ℝ, ℝ →L[ℝ] ℝ²) (vector_deriv γ_imm x) := by sorry
 
-def unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
-  fun x ↦ ⟨x , vector_deriv loop_imm x (unitSection x).snd⟩
+--def unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
+  --fun x ↦ ⟨x , vector_deriv loop_imm x (unitSection x).snd⟩
 
-lemma smooth_unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  Smooth (𝓡 1) (𝓘(ℝ, ℝ²).prod 𝓘(ℝ, ℝ²)) (unit_deriv_aux loop_imm) := by sorry
+--lemma smooth_unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
+  --Smooth (𝓡 1) (𝓘(ℝ, ℝ²).prod 𝓘(ℝ, ℝ²)) (unit_deriv_aux loop_imm) := by sorry
 
-def unit_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :=
-  Bundle.TotalSpace.snd.comp (unit_deriv_aux loop_imm)
+--def unit_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :=
+  --Bundle.TotalSpace.snd.comp (unit_deriv_aux loop_imm)
 
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
-  MLoop (unit_deriv loop_imm) := by
+  MLoop (loop_deriv loop_imm) := by
     refine
     {
-      smooth := by
-        #check contMDiff_prod_iff
-        sorry,
+      smooth := smooth_loop_deriv loop_imm,
       around_zero := by
         intro x
-        simp_rw[unit_deriv]
-        have q : Bundle.TotalSpace.snd.comp (unit_deriv_aux loop_imm) =
-          (fun x ↦ vector_deriv loop_imm x (unitSection x).snd) := by
+        simp_rw[loop_deriv]
+        have q : Bundle.TotalSpace.snd.comp (unit_deriv loop_imm) =
+          fun x ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) (unitSection x).snd:= by
             exact rfl
-        simp_rw [q, vector_deriv, unitSection]
+        simp_rw [q, unitSection]
         -- Lines 182 to 186 were simp_rw[unit_deriv, vector_deriv, unitSection]
         -- when unit_deriv was tangentspace map
-        let h := (inj_def loop_imm).mp loop_imm.imm x
+        --let h := (inj_def loop_imm).mp loop_imm.imm x
         apply by_contradiction
         intro hyp
         rw [@Mathlib.Tactic.PushNeg.not_ne_eq] at hyp
         let h2 := ((mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x).map_eq_zero_iff (loop_imm.imm x)).mp hyp
         have h3 : ∀p q : Fin 1, (fun x ↦ 1) p = (0 : TangentSpace 𝓘(ℝ, ℝ^1) x) q := by
           intro p q
-          let y := Fin.fin_one_eq_zero q
+          --let y := Fin.fin_one_eq_zero q
           exact
             Eq.symm
               ((fun {x} ↦ EReal.coe_eq_one.mp)
@@ -204,10 +235,13 @@ lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
     }
 
 lemma reghom_to_mhom {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_reghom : RegularHomotopy Γ) :
-  MHomotopy (fun t ↦ unit_deriv (Γ_reghom.imm t)) := by refine
+  MHomotopy (fun t ↦ loop_deriv (Γ_reghom.imm t)) := by refine
     {
       smooth := by
         have h  : Smooth (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ²) ↿Γ := by exact Γ_reghom.smooth
+        have h1 : ∀t : ℝ, Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (loop_deriv (Γ_reghom.imm t)) := by
+          intro t
+          exact smooth_loop_deriv (Γ_reghom.imm t)
         sorry,
       loop := fun t ↦ deriv_to_mloop (Γ_reghom.imm t)
     }
@@ -216,7 +250,7 @@ variable (x y : Fin 1)
 
 lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ : 𝕊¹ → ℝ²}
   (f₀_imm : LoopImmersion f₀) (f₁_imm : LoopImmersion f₁) (s : 𝕊¹):
-    (G (1, s)) (unit_deriv f₀_imm s) = (unit_deriv f₁_imm s) →
+    (G (1, s)) (loop_deriv f₀_imm s) = (loop_deriv f₁_imm s) →
        ∀v : TangentSpace (𝓡 1) s, (G (1, s)) ((mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₀ s) v)
        = mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s v := by
         intro h v
@@ -246,17 +280,16 @@ lemma unit_implies_all (G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²) {f₀ f₁ 
         apply congrArg (HSMul.hSMul v') at h
         rw[← ContinuousLinearMap.map_smul_of_tower (G (1,s)) v'] at h
         -- Lines 248-252 and 254-258 are unnecessary if unit_deriv is tangenspace map
-        rw[unit_deriv] at h
-        have q : Bundle.TotalSpace.snd.comp (unit_deriv_aux f₀_imm) =
-        (fun x ↦ vector_deriv f₀_imm x (unitSection x).snd) := by
-          exact rfl
-        simp_rw [q, vector_deriv, unitSection] at h
+        simp_rw[loop_deriv] at h
+        have q : Bundle.TotalSpace.snd.comp (unit_deriv f₀_imm) =
+          fun x ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₀ x) (unitSection x).snd:= by
+            exact rfl
+        simp_rw [q, unitSection] at h
         rw[← ContinuousLinearMap.map_smul_of_tower (mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₀ s) v'] at h
-        rw[unit_deriv] at h
-        have q : Bundle.TotalSpace.snd.comp (unit_deriv_aux f₁_imm) =
-        (fun x ↦ vector_deriv f₁_imm x (unitSection x).snd) := by
-          exact rfl
-        simp_rw [q, vector_deriv, unitSection] at h
+        have q : Bundle.TotalSpace.snd.comp (unit_deriv f₁_imm) =
+          fun x ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) f₁ x) (unitSection x).snd:= by
+            exact rfl
+        simp_rw [q, unitSection] at h
         rw[← ContinuousLinearMap.map_smul_of_tower (mfderiv 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ²) f₁ s) v'] at h
         rw[← v'_spec] at h
         exact h
