@@ -138,20 +138,25 @@ end loopimmersion
 section lemmas
 
 lemma inj_def {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  (∀ t : 𝕊¹, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t)) ↔ (∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0) := by
-    constructor
-    · intro h x
-      have h0 : Module.rank ℝ (TangentSpace (𝓡 1) x) = 1 := by
-        refine rank_eq_one_iff_finrank_eq_one.mpr ?_
-        exact finrank_euclideanSpace_fin
-      have h1 : Module.rank ℝ ↥(LinearMap.range (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x)) = 1 := by
-        --let h10 := rank_range_of_injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) (h x)
-        sorry
-      sorry
-    · intro h x
-      sorry
-
-
+  ∀ t : 𝕊¹, mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ t ≠ 0 := by
+    intro x
+    have h0 : Module.rank ℝ (TangentSpace (𝓡 1) x) = 1 := by
+      refine rank_eq_one_iff_finrank_eq_one.mpr ?_
+      exact finrank_euclideanSpace_fin
+    have h1 : Module.rank ℝ ↥(LinearMap.range (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x))
+      = Module.rank ℝ (TangentSpace (𝓡 1) x) := by
+        apply rank_range_of_injective
+        exact loop_imm.imm x
+    rw[h0] at h1
+    refine Ne.symm (Ne.intro ?mp.h)
+    intro h2
+    rw[← h2] at h1
+    have h3 : Module.rank ℝ ↥(LinearMap.range
+      (0 : TangentSpace 𝓘(ℝ, ℝ^1) x →L[ℝ] TangentSpace 𝓘(ℝ, ℝ²) (γ x))) = 0 := by
+        exact rank_zero
+    rw[h3] at h1
+    apply zero_ne_one' at h1
+    exact h1
 
 /- Thanks to Ruben Van de Velde -/
 def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
@@ -162,7 +167,39 @@ def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ �
 
 lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by
   -- join of two smooth maps `id` and `const`
-  sorry
+  have h : ∀x : 𝕊¹, SmoothAt (𝓡 1) (𝓡 1) (Bundle.TotalSpace.proj ∘ unitSection) x ∧
+    SmoothAt (𝓡 1) (𝓡 1) (Bundle.TotalSpace.snd ∘ unitSection : 𝕊¹ → ℝ^1) x := by
+      intro x
+      constructor
+      · exact smooth_id x
+      · exact smooth_const x
+  -- Use `smooth_prod_iff unitSection h` in an arbitrary chart
+  intro x
+  let e := (trivializationAt (ℝ^1) (TangentSpace (𝓡 1)) x)
+  have h1 : unitSection x ∈ e.source := by
+    refine (Trivialization.mem_source (trivializationAt (ℝ^1) (TangentSpace 𝓘(ℝ, ℝ^1)) x)).mpr ?_
+    exact FiberBundle.mem_baseSet_trivializationAt' (unitSection x).proj
+  haveI : MemTrivializationAtlas e := by
+    exact instMemTrivializationAtlasTrivializationAt x
+  refine (Trivialization.smoothAt_iff 𝓘(ℝ, ℝ^1) h1).mpr ?_
+  constructor
+  · exact (h x).left
+  · have h2 : (Bundle.TotalSpace.snd ∘ unitSection : 𝕊¹ → ℝ^1) = fun x ↦ (e (unitSection x)).2 := by
+      -- Question
+      -- How does one proof the above problem? No idea what to do here....
+      refine funext ?h
+      intro x
+      refine PiLp.ext ?h.h
+      intro i
+      fin_cases i
+      simp
+      rw[unitSection, Bundle.TotalSpace.snd]
+      refine Eq.symm ((fun {x} ↦ EReal.coe_eq_one.mp) ?h.h.head.a)
+      refine EReal.coe_eq_one.mpr ?h.h.head.a.a
+      sorry
+    rw[← h2]
+    exact (h x).right
+
 
 def unit_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
   (tangentMap (𝓡 1) 𝓘(ℝ, ℝ²) γ).comp unitSection
@@ -181,27 +218,10 @@ def loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : 𝕊¹ �
 lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
   Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (loop_deriv loop_imm) := by
     -- Composition of smooth map `unit_deriv` and `snd`
+    rw[loop_deriv]
+    let h := smooth_unit_deriv loop_imm
+    refine ContMDiff.comp ?hf h
     sorry
-
-
---variable {x : 𝕊¹} {w : TangentSpace (𝓡 1) x}
-
---def vector_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) :=
-  --fun x v ↦ (mfderiv (𝓡 1) 𝓘(ℝ, ℝ²) γ x) v
-
---#check tangentMap (𝓡 1) 𝓘(ℝ, ℝ²)
-
---lemma smooth_vector_deriv {γ : 𝕊¹ → ℝ²} (γ_imm : LoopImmersion γ) :
-  --∀x : 𝕊¹, SmoothAt (𝓡 1) 𝓘(ℝ, ℝ →L[ℝ] ℝ²) (vector_deriv γ_imm x) := by sorry
-
---def unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
-  --fun x ↦ ⟨x , vector_deriv loop_imm x (unitSection x).snd⟩
-
---lemma smooth_unit_deriv_aux {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
-  --Smooth (𝓡 1) (𝓘(ℝ, ℝ²).prod 𝓘(ℝ, ℝ²)) (unit_deriv_aux loop_imm) := by sorry
-
---def unit_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :=
-  --Bundle.TotalSpace.snd.comp (unit_deriv_aux loop_imm)
 
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
   MLoop (loop_deriv loop_imm) := by
