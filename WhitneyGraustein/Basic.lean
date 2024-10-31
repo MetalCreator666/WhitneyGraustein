@@ -167,38 +167,49 @@ def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ �
 
 lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by
   -- join of two smooth maps `id` and `const`
-  have h : ∀x : 𝕊¹, SmoothAt (𝓡 1) (𝓡 1) (Bundle.TotalSpace.proj ∘ unitSection) x ∧
-    SmoothAt (𝓡 1) (𝓡 1) (Bundle.TotalSpace.snd ∘ unitSection : 𝕊¹ → ℝ^1) x := by
-      intro x
-      constructor
-      · exact smooth_id x
-      · exact smooth_const x
-  -- Use `smooth_prod_iff unitSection h` in an arbitrary chart
   intro x
-  let e := (trivializationAt (ℝ^1) (TangentSpace (𝓡 1)) x)
-  have h1 : unitSection x ∈ e.source := by
+  let e' := (trivializationAt (ℝ^1) (TangentSpace (𝓡 1)) x)
+  have h1 : unitSection x ∈ e'.source := by
     refine (Trivialization.mem_source (trivializationAt (ℝ^1) (TangentSpace 𝓘(ℝ, ℝ^1)) x)).mpr ?_
     exact FiberBundle.mem_baseSet_trivializationAt' (unitSection x).proj
-  haveI : MemTrivializationAtlas e := by
+  haveI : MemTrivializationAtlas e' := by
     exact instMemTrivializationAtlasTrivializationAt x
+  have h : SmoothAt (𝓡 1) (𝓡 1) (fun s ↦ (e' (unitSection s)).1) x ∧
+    SmoothAt (𝓡 1) (𝓡 1) ((fun s ↦ (e' (unitSection s)).2)) x := by
+      constructor
+      · exact smooth_id x
+      · refine ContMDiffAt.clm_apply ?right.hg ?right.hf
+        · #check contMDiffAt_coordChangeL
+          #check VectorBundleCore.smoothOn_coordChange
+
+          -- Not Correct, but gives an idea of the direction one needs to go I think
+          apply contMDiffWithinAt_univ.mp
+          let core := (tangentBundleCore (𝓡 1) ↑𝕊¹)
+          
+          let hl0 := core.baseSet (core.toFiberBundleCore.indexAt (unitSection x).proj) ∩
+              core.baseSet (core.toFiberBundleCore.indexAt x)
+          have hl1 : x ∈ hl0 := by exact mem_inter h1 h1
+          have hl2 : hl0 ∈ 𝓝[univ] x := by
+            refine mem_nhdsWithin_of_mem_nhds ?h
+            refine (IsOpen.mem_nhds_iff ?h.hs).mpr hl1
+            refine IsOpen.inter ?h.hs.hs ?h.hs.ht
+            exact core.isOpen_baseSet (core.toFiberBundleCore.indexAt (unitSection x).proj)
+            exact core.isOpen_baseSet (core.toFiberBundleCore.indexAt x)
+          refine (contMDiffWithinAt_inter' hl2).mp ?right.hg.a
+          have hl3 : univ ∩ hl0 = hl0 := by exact univ_inter hl0
+          rw[hl3]
+          let hl := VectorBundleCore.smoothOn_coordChange core
+            (𝓡 1) (core.toFiberBundleCore.indexAt (unitSection x).proj)
+              (core.toFiberBundleCore.indexAt x) x hl1
+
+
+
+          sorry
+        · exact smooth_const x
   refine (Trivialization.smoothAt_iff 𝓘(ℝ, ℝ^1) h1).mpr ?_
   constructor
-  · exact (h x).left
-  · have h2 : (Bundle.TotalSpace.snd ∘ unitSection : 𝕊¹ → ℝ^1) = fun x ↦ (e (unitSection x)).2 := by
-      -- Question
-      -- How does one proof the above problem? No idea what to do here....
-      refine funext ?h
-      intro x
-      refine PiLp.ext ?h.h
-      intro i
-      fin_cases i
-      simp
-      rw[unitSection, Bundle.TotalSpace.snd]
-      refine Eq.symm ((fun {x} ↦ EReal.coe_eq_one.mp) ?h.h.head.a)
-      refine EReal.coe_eq_one.mpr ?h.h.head.a.a
-      sorry
-    rw[← h2]
-    exact (h x).right
+  · exact h.left
+  · exact h.right
 
 
 def unit_deriv {γ : 𝕊¹ → ℝ²} (_ : LoopImmersion γ) : 𝕊¹ → TangentBundle 𝓘(ℝ, ℝ²) (ℝ²) :=
@@ -221,6 +232,8 @@ lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
     rw[loop_deriv]
     let h := smooth_unit_deriv loop_imm
     refine ContMDiff.comp ?hf h
+    rw[ContMDiff]
+    intro x
     sorry
 
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
@@ -262,6 +275,11 @@ lemma reghom_to_mhom {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_reghom : RegularHomotop
         have h1 : ∀t : ℝ, Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (loop_deriv (Γ_reghom.imm t)) := by
           intro t
           exact smooth_loop_deriv (Γ_reghom.imm t)
+        have h2 : (fun t ↦ loop_deriv (Γ_reghom.imm t)) = (fun t x ↦ loop_deriv (Γ_reghom.imm t) x) := by
+          exact rfl
+        rw[h2, Smooth, ContMDiff]
+        intro (t,x)
+
         sorry,
       loop := fun t ↦ deriv_to_mloop (Γ_reghom.imm t)
     }
