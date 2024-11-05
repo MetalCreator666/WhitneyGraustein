@@ -114,9 +114,11 @@ lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ
               let G_prop := Classical.choose_spec h
               let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
               have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
-              have G_smoothat_A : ∀ x : A, SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
-              -- let h1 := smoothing_principle /- ℝ × 𝕊¹ is manifold and ℝ² →L[ℝ] ℝ² too ... -/
-              --   (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
+              haveI : ChartedSpace ℝ² (ℝ × 𝕊¹) := by sorry
+              have G_smoothat_A : ∀ x : A, SmoothAt (𝓡 2) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
+              let h1 := smoothing_principle (𝓡 2) (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
+              
+
               sorry
 
 end smooth
@@ -165,48 +167,40 @@ def to_circle (x : ℝ²) (hx : x ≠ 0) : 𝕊¹ := ⟨‖x‖⁻¹ • x, by
 /- The unit section of the tangent bundle of the circle -/
 def unitSection : 𝕊¹ → TangentBundle (𝓡 1) (𝕊¹) := (⟨·, fun _ ↦ 1⟩)
 
+lemma smooth_coordtransform (x : 𝕊¹) :
+  SmoothAt 𝓘(ℝ, ℝ^1) 𝓘(ℝ, ℝ^1 →L[ℝ] ℝ^1)
+    (fun (s : 𝕊¹) ↦
+      (tangentBundleCore (𝓡 1) (𝕊¹)).coordChange
+        ((tangentBundleCore (𝓡 1) (𝕊¹)).indexAt s)
+        ((tangentBundleCore (𝓡 1) (𝕊¹)).indexAt x) s)
+    x := by
+      sorry
+
+/- unitSection is Smooth section -/
 lemma smooth_unit : Smooth (𝓡 1) ((𝓡 1).prod (𝓡 1)) unitSection := by
-  -- join of two smooth maps `id` and `const`
+  -- Take arbitrary point `x` and trivialization at `x`
   intro x
   let e' := (trivializationAt (ℝ^1) (TangentSpace (𝓡 1)) x)
+  -- Show `unitSection x` is in the source of the trivialization
   have h1 : unitSection x ∈ e'.source := by
-    refine (Trivialization.mem_source (trivializationAt (ℝ^1) (TangentSpace 𝓘(ℝ, ℝ^1)) x)).mpr ?_
+    refine (Trivialization.mem_source (trivializationAt (ℝ^1) (TangentSpace (𝓡 1)) x)).mpr ?_
     exact FiberBundle.mem_baseSet_trivializationAt' (unitSection x).proj
   haveI : MemTrivializationAtlas e' := by
     exact instMemTrivializationAtlasTrivializationAt x
+  -- join of two smooth maps `id` and `const`
   have h : SmoothAt (𝓡 1) (𝓡 1) (fun s ↦ (e' (unitSection s)).1) x ∧
     SmoothAt (𝓡 1) (𝓡 1) ((fun s ↦ (e' (unitSection s)).2)) x := by
       constructor
-      · exact smooth_id x
-      · refine ContMDiffAt.clm_apply ?right.hg ?right.hf
-        · #check contMDiffAt_coordChangeL
-          #check VectorBundleCore.smoothOn_coordChange
-
-          -- Not Correct, but gives an idea of the direction one needs to go I think
-          apply contMDiffWithinAt_univ.mp
-          let core := (tangentBundleCore (𝓡 1) ↑𝕊¹)
-          
-          let hl0 := core.baseSet (core.toFiberBundleCore.indexAt (unitSection x).proj) ∩
-              core.baseSet (core.toFiberBundleCore.indexAt x)
-          have hl1 : x ∈ hl0 := by exact mem_inter h1 h1
-          have hl2 : hl0 ∈ 𝓝[univ] x := by
-            refine mem_nhdsWithin_of_mem_nhds ?h
-            refine (IsOpen.mem_nhds_iff ?h.hs).mpr hl1
-            refine IsOpen.inter ?h.hs.hs ?h.hs.ht
-            exact core.isOpen_baseSet (core.toFiberBundleCore.indexAt (unitSection x).proj)
-            exact core.isOpen_baseSet (core.toFiberBundleCore.indexAt x)
-          refine (contMDiffWithinAt_inter' hl2).mp ?right.hg.a
-          have hl3 : univ ∩ hl0 = hl0 := by exact univ_inter hl0
-          rw[hl3]
-          let hl := VectorBundleCore.smoothOn_coordChange core
-            (𝓡 1) (core.toFiberBundleCore.indexAt (unitSection x).proj)
-              (core.toFiberBundleCore.indexAt x) x hl1
-
-
-
-          sorry
-        · exact smooth_const x
-  refine (Trivialization.smoothAt_iff 𝓘(ℝ, ℝ^1) h1).mpr ?_
+      · -- `id` is smooth
+        exact smooth_id x
+      · -- `fun s ↦ (e' (unitSection s)).2` is smooth
+        refine ContMDiffAt.clm_apply ?right.hg ?right.hf
+        · -- `coordtransform` is smooth
+          exact smooth_coordtransform x
+        · -- `const` is smooth
+          exact smooth_const x
+  -- Finish proof using `h1` and `h`
+  refine (Trivialization.contMDiffAt_iff (𝓡 1) h1).mpr ?_
   constructor
   · exact h.left
   · exact h.right
@@ -232,8 +226,7 @@ lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
     rw[loop_deriv]
     let h := smooth_unit_deriv loop_imm
     refine ContMDiff.comp ?hf h
-    rw[ContMDiff]
-    intro x
+
     sorry
 
 lemma deriv_to_mloop {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ):
