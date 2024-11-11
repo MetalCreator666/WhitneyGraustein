@@ -108,18 +108,23 @@ lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ
     (∀ (x₀ : ℝ × 𝕊¹), SmoothAt (𝓘(ℝ, ℝ).prod (𝓡 1)) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
         (∀ s : 𝕊¹, (G (1,s)) (γ₀ s) = (γ₁ s)) ∧
-            (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
-              let h := eq_wind_conthom (mloop_to_tloop γ₀_mloop) (mloop_to_tloop γ₁_mloop) wind_eq
-              let G := Classical.choose h
-              let G_prop := Classical.choose_spec h
-              let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
-              have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
-              haveI : ChartedSpace ℝ² (ℝ × 𝕊¹) := by sorry
-              have G_smoothat_A : ∀ x : A, SmoothAt (𝓡 2) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
-              let h1 := smoothing_principle (𝓡 2) (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
-              
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
+            let h := eq_wind_conthom (mloop_to_tloop γ₀_mloop) (mloop_to_tloop γ₁_mloop) wind_eq
+            let G := Classical.choose h
+            let G_prop := Classical.choose_spec h
+            let A : Set (ℝ × 𝕊¹) := ({0, 1} : Set ℝ) ×ˢ (univ : Set 𝕊¹)
+            have A_closed : IsClosed A := (Finite.isClosed (by simp : ({0, 1} : Set ℝ).Finite)).prod isClosed_univ
+            haveI : ChartedSpace ℝ² (ℝ × 𝕊¹) := by sorry
+            have G_smoothat_A : ∀ x : A, SmoothAt (𝓡 2) 𝓘(ℝ, ℝ² →L[ℝ] ℝ²) G x := by sorry
+            let h1 := smoothing_principle (𝓡 2) (continuous_iff_continuousAt.mpr G_prop.left) A_closed G_smoothat_A
 
-              sorry
+            -- Manifold structure sphere
+            #check EuclideanSpace.instChartedSpaceSphere
+            -- Definition GLn
+            #check GeneralLinearGroup
+
+            sorry
+
 
 end smooth
 
@@ -226,6 +231,11 @@ lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
     rw[loop_deriv]
     let h := smooth_unit_deriv loop_imm
     refine ContMDiff.comp ?hf h
+
+    -- Idea is to look in a trivialisation e of Tℝ^2 and see
+    -- e (Bundle.TotalSpace.snd) = prod.snd (e),
+    -- where we know prod.snd is smooth and e has a smooth coordchange...
+    #check contMDiffAt_snd
 
     sorry
 
