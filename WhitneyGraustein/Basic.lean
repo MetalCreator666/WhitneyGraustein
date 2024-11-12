@@ -122,7 +122,7 @@ lemma eq_wind_smoothhom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_mloop : MLoop γ
             #check EuclideanSpace.instChartedSpaceSphere
             -- Definition GLn
             #check GeneralLinearGroup
-
+            #check ContinuousLinearMap.toNormedAlgebra
             sorry
 
 
@@ -179,6 +179,11 @@ lemma smooth_coordtransform (x : 𝕊¹) :
         ((tangentBundleCore (𝓡 1) (𝕊¹)).indexAt s)
         ((tangentBundleCore (𝓡 1) (𝕊¹)).indexAt x) s)
     x := by
+      simp [instChartedSpaceEuclideanSpaceRealFinElemHAddNatOfNatSphere, chartAt]
+      simp [ChartedSpace.chartAt, stereographic']
+
+      #check (tangentBundleCore (𝓡 1) (𝕊¹)).smoothOn_coordChange 𝓘(ℝ, ℝ^1)
+
       sorry
 
 /- unitSection is Smooth section -/
