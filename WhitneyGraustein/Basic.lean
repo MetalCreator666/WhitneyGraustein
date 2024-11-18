@@ -180,9 +180,20 @@ lemma smooth_coordtransform (x : 𝕊¹) :
         ((tangentBundleCore (𝓡 1) (𝕊¹)).indexAt x) s)
     x := by
       simp [instChartedSpaceEuclideanSpaceRealFinElemHAddNatOfNatSphere, chartAt]
+
       simp [ChartedSpace.chartAt, stereographic']
 
-      #check (tangentBundleCore (𝓡 1) (𝕊¹)).smoothOn_coordChange 𝓘(ℝ, ℝ^1)
+      let U :=
+        (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ)
+          1 (ne_zero_of_mem_unit_sphere x)).repr
+
+
+      -- let U' := fun s ↦
+      --   (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ)
+      --     1 (ne_zero_of_mem_unit_sphere s)).repr
+      have H₁ := U.contDiff.comp_contDiffOn contDiffOn_stereoToFun
+
+      -- #check (tangentBundleCore (𝓡 1) (𝕊¹)).smoothOn_coordChange 𝓘(ℝ, ℝ^1)
 
       sorry
 
@@ -236,6 +247,15 @@ lemma smooth_loop_deriv {γ : 𝕊¹ → ℝ²} (loop_imm : LoopImmersion γ) :
     rw[loop_deriv]
     let h := smooth_unit_deriv loop_imm
     refine ContMDiff.comp ?hf h
+    intro x
+
+
+    -- let e := (trivializationAt (ℝ²) (TangentSpace (𝓡 2)) x.1)
+    -- have h1 : x ∈ e.source := by
+    --   refine (Trivialization.mem_source e).mpr ?_
+    --   exact FiberBundle.mem_baseSet_trivializationAt' x.1
+    -- haveI : MemTrivializationAtlas e := by
+    --   exact instMemTrivializationAtlasTrivializationAt x.1
 
     -- Idea is to look in a trivialisation e of Tℝ^2 and see
     -- e (Bundle.TotalSpace.snd) = prod.snd (e),
@@ -283,10 +303,13 @@ lemma reghom_to_mhom {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_reghom : RegularHomotop
         have h1 : ∀t : ℝ, Smooth (𝓡 1) 𝓘(ℝ, ℝ²) (loop_deriv (Γ_reghom.imm t)) := by
           intro t
           exact smooth_loop_deriv (Γ_reghom.imm t)
-        have h2 : (fun t ↦ loop_deriv (Γ_reghom.imm t)) = (fun t x ↦ loop_deriv (Γ_reghom.imm t) x) := by
-          exact rfl
-        rw[h2, Smooth, ContMDiff]
-        intro (t,x)
+        simp [loop_deriv, unit_deriv]
+
+
+        -- have h2 : (fun t ↦ loop_deriv (Γ_reghom.imm t)) = (fun t x ↦ loop_deriv (Γ_reghom.imm t) x) := by
+        --   exact rfl
+        -- rw[h2, Smooth, ContMDiff]
+        -- intro (t,x)
 
         sorry,
       loop := fun t ↦ deriv_to_mloop (Γ_reghom.imm t)
