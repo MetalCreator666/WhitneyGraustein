@@ -44,13 +44,33 @@ axiom TLoop.windingNumber {γ : 𝕊¹ → ℝ²} (γ_tloop : TLoop γ) : ℤ
 axiom THomotopy.cont_windingNumber {Γ : ℝ → 𝕊¹ → ℝ²} (Γ_thom : THomotopy Γ) :
   Continuous (fun t ↦ (Γ_thom.loop t).windingNumber)
 
-axiom eq_wind_conthom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ₀) (γ₁_tloop : TLoop γ₁)
+axiom eq_wind_conthom_aux {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ₀) (γ₁_tloop : TLoop γ₁)
+  (wind_eq : γ₀_tloop.windingNumber = γ₁_tloop.windingNumber) :
+  ∃G : ℝ × 𝕊¹ → ℝ²,
+    (∀ (x₀ : ℝ × 𝕊¹), ContinuousAt G x₀) ∧
+      (∀ s : 𝕊¹, G (0,s) = γ₀ s) ∧
+        (∀ s : 𝕊¹, G (1,s) = γ₁ s) ∧
+          (∀ x₀ : ℝ × 𝕊¹, G x₀ ≠ 0)
+
+/- A homotopy into the punctured plane can be lifted to a homotopy into GL.-/
+axiom lift_punctured_to_GL {M : Type*} [TopologicalSpace M] {γ₀ γ₁ : M → ℝ²}
+  {G : ℝ × M → ℝ²} (hcont : ∀ (x₀ : ℝ × M), ContinuousAt G x₀) (hγ₀ : ∀ s : M, G (0,s) = γ₀ s)
+    (hγ₁ : ∀ s : M, G (1,s) = γ₁ s) (hG : ∀ x₀ : ℝ × M, G x₀ ≠ 0) :
+  ∃G : ℝ × M → ℝ² →L[ℝ] ℝ²,
+    (∀ (x₀ : ℝ × M), ContinuousAt G x₀) ∧
+      (∀ s : M, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
+        (∀ s : M, (G (1,s)) (γ₀ s) = γ₁ s) ∧
+          (∀ x₀ : ℝ × M, Injective (G x₀))
+
+lemma eq_wind_conthom {γ₀ γ₁ : 𝕊¹ → ℝ²} (γ₀_tloop : TLoop γ₀) (γ₁_tloop : TLoop γ₁)
   (wind_eq : γ₀_tloop.windingNumber = γ₁_tloop.windingNumber) :
   ∃G : ℝ × 𝕊¹ → ℝ² →L[ℝ] ℝ²,
     (∀ (x₀ : ℝ × 𝕊¹), ContinuousAt G x₀) ∧
       (∀ s : 𝕊¹, G (0,s) = ContinuousLinearMap.id ℝ ℝ²) ∧
         (∀ s : 𝕊¹, (G (1,s)) (γ₀ s) = γ₁ s) ∧
-          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀))
+          (∀ x₀ : ℝ × 𝕊¹, Injective (G x₀)) := by
+  let hom_prop := (eq_wind_conthom_aux γ₀_tloop γ₁_tloop wind_eq).choose_spec
+  exact lift_punctured_to_GL hom_prop.left hom_prop.right.left hom_prop.right.right.left hom_prop.right.right.right
 
 /- Smoothing Principle -/
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
